@@ -46,9 +46,14 @@
 #define SS_BLOCKTYPE_SUBSCRBLOCK 3 //
 
 /* User-Macros */
-#if defined(SS_STDIO_AVAILABLE) && _en_dbg_messages_
-    #define DEBUG_MSG(X, ...) ssPrintf(X "\r\n", ##__VA_ARGS__)
-#else
+#if defined(DEBUG)
+    #if defined(SS_STDIO_AVAILABLE)
+        #undef DEBUG_MSG
+        #define DEBUG_MSG(X, ...) ssPrintf(X "\r\n", ##__VA_ARGS__)
+    #endif
+#endif
+
+#ifndef DEBUG_MSG
     #define DEBUG_MSG(X, ...)
 #endif
 
@@ -63,7 +68,7 @@ typedef enum SS_PARAMETERS
     SS_PARAMETER_OBJECT_INSTANCE,
     SS_PARAMETER_INTERFACE,
     SS_PARAMETER_WRITE_PRIORITY,
-    SS_PARAMETER_DEBUG_ENABLE,
+    SS_PARAMETER_SAMPLE_TIME,
 
     SS_PARAMETER_CNT,
 } SS_PARAMETERS_t;
@@ -92,9 +97,6 @@ typedef struct Subscribe_Key_Map
 /*------------------*/
 /* Global Variables */
 /*------------------*/
-// debug_message Switch (sFun Parameter)
-static bool _en_dbg_messages_ = false;
-
 static uint8_t Rx_Buf[MAX_MPDU] = {0};
 
 uint32_t num_Key_Map = 0;
@@ -351,7 +353,6 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_INSTANCE, 0);        //Object Instance
     ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);              //Interface
     ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);         //Write Priority
-    ssSetSFcnParamTunable(S, SS_PARAMETER_DEBUG_ENABLE, 0);           //DebugSwitch
 
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
@@ -427,7 +428,7 @@ static void mdlInitializeSizes(SimStruct *S)
     }
 
     /* Subscribe Read */
-    else
+    else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
     {
         if (!ssSetNumInputPorts(S, 0))  { return; }
         if (!ssSetNumOutputPorts(S, 1)) { return; }
@@ -454,6 +455,7 @@ static void mdlInitializeSizes(SimStruct *S)
         ssSetNumIWork(S, 2); // for index of Key_Map entry, address bind success
     }
 
+    /* One SampleTime for each Block at whole */
     ssSetNumSampleTimes(S, 1);
 
     /* Take care when specifying exception free code - see sfuntmpl.doc */
@@ -461,13 +463,48 @@ static void mdlInitializeSizes(SimStruct *S)
     return;
 }
 
-static void mdlInitializeSampleTimes(SimStruct *S)
-{
-    ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);
-    //ssSetSampleTime(S, 0, CONTINUOUS_SAMPLE_TIME);
-    ssSetOffsetTime(S, 0, 0.0);
-    return;
-}
+#if defined(MATLAB_MEX_FILE) 
+    static void mdlInitializeSampleTimes(SimStruct *S)
+    {
+        double sampleTime = mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_SAMPLE_TIME));
+        
+        // /* Specified Sample-Time for Config Block (Rx Funtionality) */
+        // if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
+        // {
+        //     DEBUG_MSG("[SampleTime] Config... SS_BLOCKTYPE_CONFIG [0.1 0.0]");
+        //     ssSetSampleTime(S, 0, 0.1);
+        //     ssSetOffsetTime(S, 0, 0.0);
+        //     return;
+        // }
+
+        // else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
+        // {
+        //    DEBUG_MSG("[SampleTime] Config... SS_BLOCKTYPE_WRITEBLOCK [INHERITED_SAMPLE_TIME 0.0]");
+        //    ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);
+        //    ssSetOffsetTime(S, 0, 0.0);
+        //    return;
+        // }
+
+        // /* Other Blocks are only called defined by inhertied Sample Time */
+        // else
+        // {
+            DEBUG_MSG("[SampleTime] BlockType (%u) [%f %f]",
+                      (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)),
+                      sampleTime,
+                      0.0);
+            
+            if      (sampleTime == -1) { ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME); }
+            else if (sampleTime == 0)  { ssSetSampleTime(S, 0, CONTINUOUS_SAMPLE_TIME); }
+            else                       { ssSetSampleTime(S, 0, sampleTime); }
+
+            ssSetOffsetTime(S, 0, 0.0);
+            return;
+        // }
+        
+        DEBUG_MSG("[ERROR] - [SampleTime] Config... FAIL");
+        return;
+    }
+#endif
 
 #if defined(MDL_INITIALIZE_CONDITIONS)
     static void mdlInitializeConditions(SimStruct *S)
@@ -478,9 +515,6 @@ static void mdlInitializeSampleTimes(SimStruct *S)
         /* ConfigBlock */
         if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
         {
-            /* Enable Debug Messages */
-            _en_dbg_messages_ = ((uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_ENABLE)) > 0);
-
             mxGetString(ssGetSFcnParam(S, SS_PARAMETER_INTERFACE), host, 16);
 
             DEBUG_MSG("[INIT] --ConfigBlock--");
@@ -576,10 +610,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         do /* process */
         {
             pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, 10);
-            if (pdu_len)
-            {
-                npdu_handler(&src, &Rx_Buf[0], pdu_len);
-            }
+            if (pdu_len) { npdu_handler(&src, &Rx_Buf[0], pdu_len); }
         } while (pdu_len > 0);
     }
 
