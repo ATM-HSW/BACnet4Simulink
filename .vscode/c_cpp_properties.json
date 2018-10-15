@@ -3,6 +3,7 @@
         {
             "name": "win32",
             "includePath": [
+                "${workspaceRoot}",
                 "${workspaceRoot}/**",
                 "${WorkspaceFolder}/**",
                 "D:\\Programme\\MATLAB\\R2018a\\simulink\\include\\**",
