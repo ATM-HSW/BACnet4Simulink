@@ -1,6 +1,12 @@
 #ifndef _DEBUG_MESSAGES_H_
 #define _DEBUG_MESSAGES_H_
 
+/*-----------*/
+/* Includes */
+/*-----------*/
+#include "simstruc.h"
+
+
 /*--------*/
 /* Macros */
 /*--------*/

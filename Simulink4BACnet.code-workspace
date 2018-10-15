@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"dbg_message.h": "c",
+			"bactext.h": "c",
+			"bacdef.h": "c",
+			"simstruc.h": "c",
+			"stddef.h": "c",
+			"*.m": "matlab",
+			"simstruc_compcond.h": "c",
+			"simstruc_types.h": "c",
+			"handlers.h": "c",
+			"cg_sfun.h": "c"
+		},
+		"matlab.matlabpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\matlab.exe",
+		"matlab.mlintpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\win64\\mlint.exe"
+	}
+}

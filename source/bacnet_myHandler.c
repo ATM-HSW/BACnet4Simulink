@@ -1,13 +1,15 @@
 /*----------*/
 /* Includes */
 /*----------*/
+
+// Environmant
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#include "bacdef.h"
+// BACnet
 #include "config.h"
 #include "bactext.h"
 #include "bacerror.h"
@@ -16,7 +18,6 @@
 #include "tsm.h"
 #include "address.h"
 #include "npdu.h"
-#include "apdu.h"
 #include "device.h"
 #include "net.h"
 #include "datalink.h"
@@ -26,6 +27,8 @@
 #include "client.h"
 #include "txbuf.h"
 
+// Misc
+#include "bacnet_myHandler.h"
 #include "dbg_message.h"
 #include "typedefs.h"
 
@@ -40,61 +43,9 @@ extern uint32_t num_Subscriptions;
 extern SUBSCRIBE_KEY_MAP *S_Key_Map[255];
 
 
-/*--------------------*/
-/* BACnet - myHandler */
-/*--------------------*/
-static void MyErrorHandler(BACNET_ADDRESS *src,
-                           uint8_t invoke_id,
-                           BACNET_ERROR_CLASS error_class,
-                           BACNET_ERROR_CODE error_code)
-{
-    DEBUG_MSG("--[ERROR]-handler--");
-
-    //     if (address_match(&Target_Address, src) &&
-    //         (invoke_id == Request_Invoke_ID)) {
-    //         printf("BACnet Error: %s: %s\r\n",
-    //             bactext_error_class_name((int) error_class),
-    //             bactext_error_code_name((int) error_code));
-    //         Error_Detected = true;
-    //     }
-
-    return;
-}
-
-void MyAbortHandler(BACNET_ADDRESS *src,
-                    uint8_t invoke_id,
-                    uint8_t abort_reason,
-                    bool server)
-{
-    DEBUG_MSG("--[ABORT]-handler--");
-
-    //     (void) server;
-    //     if (address_match(&Target_Address, src) &&
-    //         (invoke_id == Request_Invoke_ID)) {
-    //         printf("BACnet Abort: %s\r\n",
-    //             bactext_abort_reason_name((int) abort_reason));
-    //         Error_Detected = true;
-    //     }
-
-    return;
-}
-
-void MyRejectHandler(BACNET_ADDRESS *src,
-                    uint8_t invoke_id,
-                    uint8_t reject_reason)
-{
-    DEBUG_MSG("--[REJECT]-handler--");
-
-    //     if (address_match(&Target_Address, src) &&
-    //         (invoke_id == Request_Invoke_ID)) {
-    //         printf("BACnet Reject: %s\r\n",
-    //             bactext_reject_reason_name((int) reject_reason));
-    //         Error_Detected = true;
-    //     }
-
-    return;
-}
-
+/*------------------*/
+/* BACnet - Handler */
+/*------------------*/
 void My_Read_Property_Ack_Handler(uint8_t *service_request,
                                   uint16_t service_len,
                                   BACNET_ADDRESS *src,
@@ -188,9 +139,11 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
                 case BACNET_APPLICATION_TAG_ENUMERATED:
                     S_Key_Map[ii]->data.Boolean = cov_data.listOfValues->value.type.Boolean;
                     break;
+
                 case BACNET_APPLICATION_TAG_UNSIGNED_INT:
                     S_Key_Map[ii]->data.Enumerated = cov_data.listOfValues->value.type.Unsigned_Int;
                     break;
+                    
                 case BACNET_APPLICATION_TAG_REAL:
                     S_Key_Map[ii]->data.Real = cov_data.listOfValues->value.type.Real;
                     break;
@@ -207,43 +160,5 @@ void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src,
                                      uint8_t invoke_id)
 {
     tsm_invoke_id_free(invoke_id);
-    return;
-}
-
-static void Init_Service_Handlers(void)
-{
-    /* handle i-am to support binding to other devices */
-    apdu_set_unconfirmed_handler(SERVICE_UNCONFIRMED_I_AM, handler_i_am_bind);
-
-    /* set the handler for all the services we don't implement
-       It is required to send the proper reject message... */
-    apdu_set_unrecognized_service_handler_handler(handler_unrecognized_service);
-
-    /* we must implement read property - it's required! */
-    //apdu_set_confirmed_handler(SERVICE_CONFIRMED_READ_PROPERTY,
-    //    handler_read_property);
-    /* handle the data coming back from confirmed requests */
-    apdu_set_confirmed_ack_handler(SERVICE_CONFIRMED_READ_PROPERTY,
-                                   My_Read_Property_Ack_Handler);
-
-    /* handle the ack coming back */
-    apdu_set_confirmed_simple_ack_handler(SERVICE_CONFIRMED_WRITE_PROPERTY,
-                                          MyWritePropertySimpleAckHandler);
-
-    /* handle the Simple ack coming back from SubscribeCOV */
-    apdu_set_confirmed_simple_ack_handler(SERVICE_CONFIRMED_SUBSCRIBE_COV,
-                                          MyWritePropertySimpleAckHandler);
-
-    /* handle the data coming back from COV subscriptions */
-    apdu_set_unconfirmed_handler(SERVICE_UNCONFIRMED_COV_NOTIFICATION,
-                                 My_Unconfirmed_COV_Notification_Handler);
-
-    /* handle any errors coming back */
-    apdu_set_error_handler(SERVICE_CONFIRMED_READ_PROPERTY, MyErrorHandler);
-    apdu_set_error_handler(SERVICE_CONFIRMED_SUBSCRIBE_COV, MyErrorHandler);
-    apdu_set_error_handler(SERVICE_CONFIRMED_WRITE_PROPERTY, MyErrorHandler);
-    apdu_set_abort_handler(MyAbortHandler);
-    apdu_set_reject_handler(MyRejectHandler);
-
     return;
 }

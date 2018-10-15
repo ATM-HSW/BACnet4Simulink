@@ -1,9 +1,0 @@
-{
-  "files.associations": {
-    "dbg_message.h": "c",
-    "bactext.h": "c",
-    "bacdef.h": "c",
-    "simstruc.h": "c",
-    "stddef.h": "c"
-  },
-}
