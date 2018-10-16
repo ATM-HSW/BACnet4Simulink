@@ -122,7 +122,7 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
         i++;
 
         if (i < 2) { pProperty_value->next = &property_value[i]; }
-        else        { pProperty_value->next = NULL; }
+        else       { pProperty_value->next = NULL; }
 
         pProperty_value = pProperty_value->next;
     }
@@ -138,17 +138,17 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
             {
                 switch (cov_data.listOfValues->value.tag)
                 {
-                case BACNET_APPLICATION_TAG_ENUMERATED:
-                    S_Key_Map[i]->data.Boolean = cov_data.listOfValues->value.type.Boolean;
-                    break;
-
-                case BACNET_APPLICATION_TAG_UNSIGNED_INT:
-                    S_Key_Map[i]->data.Enumerated = cov_data.listOfValues->value.type.Unsigned_Int;
-                    break;
-                    
-                case BACNET_APPLICATION_TAG_REAL:
-                    S_Key_Map[i]->data.Real = cov_data.listOfValues->value.type.Real;
-                    break;
+                    case BACNET_APPLICATION_TAG_ENUMERATED:
+                        S_Key_Map[i]->data.Boolean = cov_data.listOfValues->value.type.Boolean;
+                        break;
+    
+                    case BACNET_APPLICATION_TAG_UNSIGNED_INT:
+                        S_Key_Map[i]->data.Enumerated = cov_data.listOfValues->value.type.Unsigned_Int;
+                        break;
+                        
+                    case BACNET_APPLICATION_TAG_REAL:
+                        S_Key_Map[i]->data.Real = cov_data.listOfValues->value.type.Real;
+                        break;
                 }
                 break;
             }

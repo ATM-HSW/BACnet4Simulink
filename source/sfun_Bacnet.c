@@ -397,23 +397,25 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     /* Read Block */
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_READBLOCK)
     {
+        // Target-Information
         uint32_t Target_Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
         uint32_t Object_Type =            (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
 
+
         // If unbound, bind Target_Device Address
-        if (ssGetIWork(S)[1] == 0)
+        if (!(bool)ssGetIWork(S)[1])
         {
             ssGetIWork(S)[1] = (uint32_t)address_bind_request(Target_Device_Instance,
                                                              &max_apdu,
                                                              &Target_Address);
 
             DEBUG_MSG("[READBLOCK] Address bind for device (%u)... %s",
-                      Target_Device_Instance, (ssGetIWork(S)[1] != 0) ? "OK" : "FAIL");
+                      Target_Device_Instance, ((bool)ssGetIWork(S)[1]) ? "OK" : "FAIL");
         }
         
         // If bound, send Read_Property_Request
-        if ((ssGetIWork(S)[1] != 0) && (Key_Map[ssGetIWork(S)[0]]->invoke_ID == 0))
+        if ((bool)ssGetIWork(S)[1] && Key_Map[ssGetIWork(S)[0]]->invoke_ID == 0)
         {
             Key_Map[ssGetIWork(S)[0]]->invoke_ID = 
                 Send_Read_Property_Request(Target_Device_Instance,
@@ -460,7 +462,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             DEBUG_MSG("[mdlOutputs_Read] Undefined ObjectType %u", Object_Type);
             DEBUG_MSG("[mdlOutputs_Read] Reverting to Datatybe 'Real'");
 
-            yb = (bool *)ssGetOutputPortSignal(S, 0);
+            yb = (real32_T *)ssGetOutputPortSignal(S, 0);
             *yb = Key_Map[ssGetIWork(S)[0]]->data.Real;
         }
 
@@ -470,18 +472,19 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     /* Write Block */
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
+        //  Target-Information
         uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
         uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        uint32_t Object_Priority = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
 
         // If unbound, bind Target_Device address
         if (ssGetIWork(S)[1] == 0)
         {
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Device_Instance,
-                                                             &max_apdu, &Target_Address);
+            ssGetIWork(S)[1] = address_bind_request(Device_Instance, &max_apdu, &Target_Address) ? 1 : 0;
 
             DEBUG_MSG("[WRITEBLOCK] Address bind for device (%u)... %s",
-                      Device_Instance, (ssGetIWork(S)[1] != 0) ? "OK" : "FAIL");
+                      Device_Instance, (ssGetIWork(S)[1] == 0) ? "FAIL" : "OK");
         }
 
         write_data.next = NULL;
@@ -489,13 +492,16 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         u = ssGetInputPortRealSignalPtrs(S, 0);
 
+        //
+        // Configure WriteProperty Data & Type
+
         /*  Analog Objects */
         if (Object_Type == OBJECT_ANALOG_INPUT ||
             Object_Type == OBJECT_ANALOG_OUTPUT ||
             Object_Type == OBJECT_ANALOG_VALUE)
         {
             write_data.tag = BACNET_APPLICATION_TAG_REAL;
-            write_data.type.Real = (float)*u[0];
+            write_data.type.Real = (float)(*u[0]);
         }
 
         /* Binary Objects */
@@ -512,7 +518,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
         {
             write_data.tag = BACNET_APPLICATION_TAG_UNSIGNED_INT;
-            write_data.type.Unsigned_Int = (uint32_t)*u[0];
+            write_data.type.Unsigned_Int = (uint32_t)(*u[0]);
         }
 
         /* Other */
@@ -522,24 +528,22 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             DEBUG_MSG("[mdlOutputs_Write] Reverting to Simulinkdefault 'Double'");
 
             write_data.tag = BACNET_APPLICATION_TAG_DOUBLE;
-            write_data.type.Double = (double)*u[0];
+            write_data.type.Double = (double)(*u[0]);
         }
 
         // If address bound, send Write_Property_Request
-        if (ssGetIWork(S)[1] != 0)
+        if (ssGetIWork(S)[1] == 1)
         {
             Send_Write_Property_Request(Device_Instance,
                                         Object_Type,
                                         Object_Instance,
                                         PROP_PRESENT_VALUE,
                                         &write_data,
-                                        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY)), BACNET_ARRAY_ALL);
+                                        Object_Priority, BACNET_ARRAY_ALL);
 
             DEBUG_MSG("[WRITEBLOCK] Sent WP request (%u|%u|%u|%s)",
-                      Device_Instance,
-                      Object_Type,
-                      Object_Instance,
-                      "PV");
+                      Device_Instance, Object_Type,
+                      Object_Instance, "PV");
         }
     }
 
