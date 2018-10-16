@@ -142,8 +142,8 @@ int timesync_encode_timesync_recipients(
     unsigned max_apdu,
     BACNET_RECIPIENT_LIST * recipient)
 {
-    int len = 0;
-    int apdu_len = 0;
+    unsigned int len = 0;
+    unsigned int apdu_len = 0;
     BACNET_OCTET_STRING octet_string;
     BACNET_RECIPIENT_LIST *pRecipient;
 
@@ -168,13 +168,12 @@ int timesync_encode_timesync_recipients(
             }
             if (max_apdu >= len) {
                 /* CHOICE - address [1] BACnetAddress - opening */
-                len = encode_opening_tag(&apdu[apdu_len], 1);
+                len = (unsigned int)encode_opening_tag(&apdu[apdu_len], 1);
                 apdu_len += len;
                 /* network-number Unsigned16, */
                 /* -- A value of 0 indicates the local network */
-                len =
-                    encode_application_unsigned(&apdu[apdu_len],
-                    pRecipient->type.address.net);
+                len = encode_application_unsigned(&apdu[apdu_len],
+                                                  pRecipient->type.address.net);
                 apdu_len += len;
                 /* mac-address OCTET STRING */
                 /* -- A string of length 0 indicates a broadcast */
@@ -283,15 +282,15 @@ int timesync_decode_timesync_recipients(
             }
             len = decode_octet_string(&apdu[0], len_value_type, &octet_string);
             apdu_len += len;
-            if (octetstring_length(&octet_string) == 0) {
+            if (octetstring_length(&octet_string) == (size_t)0) {
                 /* -- A string of length 0 indicates a broadcast */
             } else if (pRecipient->type.address.net) {
                 pRecipient->type.address.len =
-                    octetstring_copy_value(&pRecipient->type.address.adr[0],
+                    (uint8_t)octetstring_copy_value(&pRecipient->type.address.adr[0],
                     sizeof(pRecipient->type.address.adr), &octet_string);
             } else {
                 pRecipient->type.address.mac_len =
-                    octetstring_copy_value(&pRecipient->type.address.mac[0],
+                    (uint8_t)octetstring_copy_value(&pRecipient->type.address.mac[0],
                     sizeof(pRecipient->type.address.mac), &octet_string);
             }
         } else {

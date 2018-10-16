@@ -6,6 +6,7 @@
 #include "handlers.h"
 
 // Custom-Handler
+#include "bacnet_initHandler.h"
 #include "bacnet_myHandler.h"
 
 

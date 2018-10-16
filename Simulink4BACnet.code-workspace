@@ -15,7 +15,8 @@
 			"simstruc_compcond.h": "c",
 			"simstruc_types.h": "c",
 			"handlers.h": "c",
-			"cg_sfun.h": "c"
+			"cg_sfun.h": "c",
+			"bacenum.h": "c"
 		},
 		"matlab.matlabpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\matlab.exe",
 		"matlab.mlintpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\win64\\mlint.exe"

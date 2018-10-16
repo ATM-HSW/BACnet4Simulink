@@ -903,7 +903,7 @@ int encode_application_octet_string(
     if (octet_string) {
         apdu_len =
             encode_tag(&apdu[0], BACNET_APPLICATION_TAG_OCTET_STRING, false,
-            octetstring_length(octet_string));
+            (uint32_t)octetstring_length(octet_string));
         /* FIXME: probably need to pass in the length of the APDU
            to bounds check since it might not be the only data chunk */
         if ((apdu_len + octetstring_length(octet_string)) < MAX_APDU) {
@@ -929,7 +929,7 @@ int encode_context_octet_string(
     if (apdu && octet_string) {
         apdu_len =
             encode_tag(&apdu[0], tag_number, true,
-            octetstring_length(octet_string));
+            (uint32_t)octetstring_length(octet_string));
         if ((apdu_len + octetstring_length(octet_string)) < MAX_APDU) {
             apdu_len += encode_octet_string(&apdu[apdu_len], octet_string);
         } else {
@@ -1017,7 +1017,7 @@ int encode_bacnet_character_string(
     return (int) encode_bacnet_character_string_safe(apdu, MAX_APDU,
         characterstring_encoding(char_string),
         characterstring_value(char_string),
-        characterstring_length(char_string));
+        (uint32_t)characterstring_length(char_string));
 }
 
 /* from clause 20.2.9 Encoding of a Character String Value */

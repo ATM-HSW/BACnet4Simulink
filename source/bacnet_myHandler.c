@@ -54,47 +54,49 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
     BACNET_READ_PROPERTY_DATA data;
     BACNET_APPLICATION_DATA_VALUE value;
 
-    int len = 0;
-    int application_data_len;
+    uint8_t  len = 0;
+    uint8_t  application_data_len;
     uint8_t *application_data;
-
 
     DEBUG_MSG("--[ReadProp] ACK-Handler--");
 
-    for (uint32_t ii = 0; ii < num_Key_Map; ii++)
+    // Look for KeyMap containing InvokeID of received RP_ACK
+    for (uint32_t i = 0; i < num_Key_Map; i++)
     {
-        if (Key_Map[ii]->invoke_ID = service_data->invoke_id)
+        if (Key_Map[i]->invoke_ID == service_data->invoke_id)
         {
             len = rp_ack_decode_service_request(service_request, service_len, &data);
+
             if (len > 0)
             {
                 application_data = data.application_data;
                 application_data_len = data.application_data_len;
 
-                len = bacapp_decode_application_data(application_data, (uint8_t)application_data_len, &value);
+                len = bacapp_decode_application_data(application_data, application_data_len, &value);
 
                 if (len > 0)
                 {
                     switch (value.tag)
                     {
                     case BACNET_APPLICATION_TAG_ENUMERATED:
-                        Key_Map[ii]->data.Boolean = value.type.Boolean;
-                        DEBUG_MSG(  "%d", Key_Map[ii]->data.Boolean);
+                        Key_Map[i]->data.Boolean = value.type.Boolean;
+                        DEBUG_MSG(  "%d", Key_Map[i]->data.Boolean);
                         break;
                     case BACNET_APPLICATION_TAG_UNSIGNED_INT:
-                        Key_Map[ii]->data.Enumerated = value.type.Unsigned_Int;
-                        DEBUG_MSG(  "%d", Key_Map[ii]->data.Enumerated);
+                        Key_Map[i]->data.Enumerated = value.type.Unsigned_Int;
+                        DEBUG_MSG(  "%d", Key_Map[i]->data.Enumerated);
                         break;
                     case BACNET_APPLICATION_TAG_REAL:
-                        Key_Map[ii]->data.Real = value.type.Real;
-                        DEBUG_MSG(  "%f", Key_Map[ii]->data.Real);
+                        Key_Map[i]->data.Real = value.type.Real;
+                        DEBUG_MSG(  "%f", Key_Map[i]->data.Real);
                         break;
                     }
                 }
             }
 
-            tsm_invoke_id_free(Key_Map[ii]->invoke_ID);
-            Key_Map[ii]->invoke_ID = 0;
+            // Free InvokeID and reset corresponding KeyMap
+            tsm_invoke_id_free(Key_Map[i]->invoke_ID);
+            Key_Map[i]->invoke_ID = 0;
             break;
         }
     }
@@ -107,19 +109,19 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
                                              BACNET_ADDRESS *src)
 {
     BACNET_COV_DATA cov_data;
-    BACNET_PROPERTY_VALUE property_value[2];
+    BACNET_PROPERTY_VALUE  property_value[2];
     BACNET_PROPERTY_VALUE *pProperty_value = NULL;
-    uint32_t ii = 0;
+    uint32_t i = 0;
 
-    DEBUG_MSG("--[UcofNotif] handler--");
+    DEBUG_MSG("--[uCoVnotif] handler--");
 
     pProperty_value = &property_value[0];
     
     while (pProperty_value)
     {
-        ii++;
+        i++;
 
-        if (ii < 2) { pProperty_value->next = &property_value[ii]; }
+        if (i < 2) { pProperty_value->next = &property_value[i]; }
         else        { pProperty_value->next = NULL; }
 
         pProperty_value = pProperty_value->next;
@@ -130,22 +132,22 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
 
     if (len > 0)
     {
-        for (ii = 0; ii < num_Subscriptions; ii++)
+        for (i = 0; i < num_Subscriptions; i++)
         {
-            if (S_Key_Map[ii]->process_ID == cov_data.subscriberProcessIdentifier)
+            if (S_Key_Map[i]->process_ID == cov_data.subscriberProcessIdentifier)
             {
                 switch (cov_data.listOfValues->value.tag)
                 {
                 case BACNET_APPLICATION_TAG_ENUMERATED:
-                    S_Key_Map[ii]->data.Boolean = cov_data.listOfValues->value.type.Boolean;
+                    S_Key_Map[i]->data.Boolean = cov_data.listOfValues->value.type.Boolean;
                     break;
 
                 case BACNET_APPLICATION_TAG_UNSIGNED_INT:
-                    S_Key_Map[ii]->data.Enumerated = cov_data.listOfValues->value.type.Unsigned_Int;
+                    S_Key_Map[i]->data.Enumerated = cov_data.listOfValues->value.type.Unsigned_Int;
                     break;
                     
                 case BACNET_APPLICATION_TAG_REAL:
-                    S_Key_Map[ii]->data.Real = cov_data.listOfValues->value.type.Real;
+                    S_Key_Map[i]->data.Real = cov_data.listOfValues->value.type.Real;
                     break;
                 }
                 break;
@@ -156,8 +158,7 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
     return;
 }
 
-void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src,
-                                     uint8_t invoke_id)
+void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src, uint8_t invoke_id)
 {
     tsm_invoke_id_free(invoke_id);
     return;

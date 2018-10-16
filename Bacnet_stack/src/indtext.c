@@ -94,7 +94,7 @@ bool indtext_by_istring(
 
     if (data_list && search_name) {
         while (data_list->pString) {
-            if (stricmp(data_list->pString, search_name) == 0) {
+            if (_stricmp(data_list->pString, search_name) == 0) {
                 index = data_list->index;
                 found = true;
                 break;

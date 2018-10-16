@@ -1,0 +1,648 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Quelldateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Quelldateien\BACnetStack">
+      <UniqueIdentifier>{d031fcf5-9219-4d7c-b7ba-eec464ebbd24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\BACnetStack\source">
+      <UniqueIdentifier>{6d94e94d-7d2a-4d22-be63-0bde5171cdb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\BACnetStack\handler">
+      <UniqueIdentifier>{691c20da-587d-44cf-9a19-ddaabce38e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\BACnetSTack">
+      <UniqueIdentifier>{8c38e2dd-798b-43e0-8dd1-8700ecb8051e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\BACnetSTack\include">
+      <UniqueIdentifier>{49888766-495e-4e42-85fc-e35ccecf04a9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\abort.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\address.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\alarm_ack.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\apdu.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\arf.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\awf.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacaddr.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacapp.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacdcode.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacdevobjpropref.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacerror.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacint.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacprop.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacpropstates.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacreal.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacstr.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bactext.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bactimevalue.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bigend.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bip.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bvlc.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\cov.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\crc.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\datalink.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\datetime.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\dcc.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\debug.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\event.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\fifo.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\filename.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\get_alarm_sum.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\getevent.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\iam.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ihave.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\indtext.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\key.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\keylist.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\lso.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\memcopy.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\mstp.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\mstptext.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\npdu.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\proplist.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ptransfer.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rd.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\readrange.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\reject.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ringbuf.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rp.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rpm.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\sbuf.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\timestamp.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\timesync.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\tsm.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\version.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\whohas.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\whois.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\wp.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\src\wpm.c">
+      <Filter>Quelldateien\BACnetStack\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\dlenv.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_alarm_ack.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_arf.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_arf_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_awf.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ccov.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_cov.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_dcc.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_gas_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_get_alarm_sum.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_getevent.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_iam.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ihave.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_lso.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_npdu.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_pt.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_pt_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rd.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_routed_npdu.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rp.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rp_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rpm.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rpm_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rr.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rr_a.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ts.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ucov.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_upt.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_whohas.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_whois.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_wp.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_wpm.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\noserv.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\objects.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ack_alarm.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_arfs.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_awfs.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_cevent.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_cov.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_dcc.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_iam.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ihave.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_lso.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ptransfer.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rd.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_readrange.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_router.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rp.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rpm.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ts.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_uevent.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_upt.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_whohas.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_whois.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_wp.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_wpm.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\txbuf.c">
+      <Filter>Quelldateien\BACnetStack\handler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Bacnet_stack\device-client.c">
+      <Filter>Headerdateien\BACnetSTack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\bacnet_initHandler.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\bacnet_myHandler.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\sfun_Bacnet.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\bacnet_errorHandler.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Bacnet_stack\device.h">
+      <Filter>Headerdateien\BACnetSTack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\net.h">
+      <Filter>Headerdateien\BACnetSTack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\stdbool.h">
+      <Filter>Headerdateien\BACnetSTack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\abort.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\address.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\alarm_ack.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\apdu.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\arcnet.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\arf.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\awf.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacaddr.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacapp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdcode.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdef.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdevobjpropref.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacenum.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacerror.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacint.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacnet.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacprop.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacpropstates.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacreal.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacstr.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bactext.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bactimevalue.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bigend.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bip.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bits.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bvlc.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bytes.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\client.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\config.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\cov.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\crc.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\datalink.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\datetime.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dcc.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\debug.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dlenv.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dlmstp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ethernet.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\event.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\fifo.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\filename.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\get_alarm_sum.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\getevent.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\handlers.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\iam.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ihave.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\indtext.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\key.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\keylist.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\lso.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\memcopy.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstpdef.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstptext.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mydata.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\npdu.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\objects.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\proplist.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ptransfer.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rd.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\readrange.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\reject.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ringbuf.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rpm.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\sbuf.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\timestamp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\timesync.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\tsm.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\txbuf.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\version.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\whohas.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\whois.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\wp.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Bacnet_stack\include\wpm.h">
+      <Filter>Headerdateien\BACnetSTack\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\bacnet_initHandler.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\bacnet_myHandler.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\dbg_message.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\macros.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\typedefs.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -12,6 +12,7 @@
 /* Prototypes */
 /*------------*/
 
+
 // MyHandlers
 void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src, uint8_t invoke_id);
 

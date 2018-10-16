@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{DCE506C2-E89C-4DA3-9BEB-ACEE3D88A63E}</ProjectGuid>
+    <RootNamespace>SimulinkDebug</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(ProjectDir)..\..\..\;$(ProjectDir)..\..\..\include;$(ProjectDir)..\..\..\Bacnet_Stack;$(ProjectDir)..\..\..\Bacnet_Stack\include;D:\Programme\MATLAB\R2018a\simulink\include;D:\Programme\MATLAB\R2018a\extern\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Bacnet_stack\device-client.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\dlenv.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_alarm_ack.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_arf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_arf_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_awf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ccov.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_cov.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_dcc.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_gas_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_getevent.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_get_alarm_sum.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_iam.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ihave.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_lso.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_npdu.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_pt.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_pt_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rd.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_routed_npdu.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rpm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rpm_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rp_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rr.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_rr_a.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ts.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_ucov.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_upt.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_whohas.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_whois.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_wp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\h_wpm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\noserv.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\objects.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ack_alarm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_arfs.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_awfs.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_cevent.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_cov.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_dcc.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_iam.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ihave.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_lso.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ptransfer.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rd.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_readrange.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_router.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_rpm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_ts.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_uevent.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_upt.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_whohas.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_whois.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_wp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\s_wpm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\handler\txbuf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\abort.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\address.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\alarm_ack.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\apdu.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\arf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\awf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacaddr.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacapp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacdcode.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacdevobjpropref.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacerror.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacint.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacprop.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacpropstates.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacreal.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bacstr.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bactext.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bactimevalue.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bigend.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bip.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\bvlc.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\cov.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\crc.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\datalink.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\datetime.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\dcc.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\debug.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\event.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\fifo.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\filename.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\getevent.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\get_alarm_sum.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\iam.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ihave.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\indtext.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\key.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\keylist.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\lso.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\memcopy.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\mstp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\mstptext.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\npdu.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\proplist.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ptransfer.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rd.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\readrange.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\reject.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\ringbuf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\rpm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\sbuf.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\timestamp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\timesync.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\tsm.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\version.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\whohas.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\whois.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\wp.c" />
+    <ClCompile Include="..\..\..\Bacnet_stack\src\wpm.c" />
+    <ClCompile Include="..\..\..\source\bacnet_errorHandler.c" />
+    <ClCompile Include="..\..\..\source\bacnet_initHandler.c" />
+    <ClCompile Include="..\..\..\source\bacnet_myHandler.c" />
+    <ClCompile Include="..\..\..\source\sfun_Bacnet.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Bacnet_stack\device.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\abort.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\address.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\alarm_ack.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\apdu.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\arcnet.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\arf.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\awf.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacaddr.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacapp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdcode.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdef.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacdevobjpropref.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacenum.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacerror.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacint.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacnet.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacprop.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacpropstates.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacreal.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bacstr.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bactext.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bactimevalue.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bigend.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bip.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bits.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bvlc.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\bytes.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\client.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\config.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\cov.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\crc.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\datalink.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\datetime.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dcc.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\debug.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dlenv.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\dlmstp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ethernet.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\event.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\fifo.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\filename.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\getevent.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\get_alarm_sum.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\handlers.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\iam.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ihave.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\indtext.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\key.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\keylist.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\lso.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\memcopy.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstpdef.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mstptext.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\mydata.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\npdu.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\objects.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\proplist.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ptransfer.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rd.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\readrange.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\reject.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\ringbuf.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\rpm.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\sbuf.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\timestamp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\timesync.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\tsm.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\txbuf.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\version.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\whohas.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\whois.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\wp.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\include\wpm.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\net.h" />
+    <ClInclude Include="..\..\..\Bacnet_stack\stdbool.h" />
+    <ClInclude Include="..\..\..\include\bacnet_initHandler.h" />
+    <ClInclude Include="..\..\..\include\bacnet_myHandler.h" />
+    <ClInclude Include="..\..\..\include\dbg_message.h" />
+    <ClInclude Include="..\..\..\include\macros.h" />
+    <ClInclude Include="..\..\..\include\typedefs.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
