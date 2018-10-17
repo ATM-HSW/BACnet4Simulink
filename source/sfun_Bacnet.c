@@ -4,14 +4,18 @@
 /*----------*/
 /* Includes */
 /*----------*/
+// MATLAB / Simulink
 #include "simstruc.h"
+#include "matrix.h"
 
+// System
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
+// BACnet Stack
 #include "bacdef.h"
 #include "config.h"
 #include "bactext.h"
@@ -31,6 +35,7 @@
 #include "client.h"
 #include "txbuf.h"
 
+// Project
 #include "bacnet_initHandler.h"
 #include "bacnet_myHandler.h"
 #include "dbg_message.h"
@@ -132,7 +137,8 @@ static void mdlInitializeSizes(SimStruct *S)
         ssSetOutputPortWidth(S, 0, 1);
         ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
 
-        ssSetNumIWork(S, 2); // for index of Key_Map entry, address bind success
+        ssSetNumIWork(S, SS_IWORK_RD_CNT);
+        ssSetNumPWork(S, SS_PWORK_RD_CNT);
     }
 
     /* Write Block */
@@ -169,7 +175,7 @@ static void mdlInitializeSizes(SimStruct *S)
 
         if (!ssSetNumOutputPorts(S, 0)) { return; }
 
-        ssSetNumIWork(S, 2); // for index of Key_Map entry, address bind success
+        ssSetNumIWork(S, SS_IWORK_WR_CNT);
     }
 
     /* Subscribe Read */
@@ -203,7 +209,7 @@ static void mdlInitializeSizes(SimStruct *S)
         ssSetOutputPortWidth(S, 0, 1);
         ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
 
-        ssSetNumIWork(S, 2); // for index of Key_Map entry, address bind success
+        ssSetNumIWork(S, SS_IWORK_COV_CNT);
     }
 
     /* One SampleTime for each Block at whole */
@@ -237,7 +243,7 @@ static void mdlInitializeSizes(SimStruct *S)
                 break;
 
                 case SS_BLOCKTYPE_SUBSCRBLOCK:
-                strncpy_s(blockType_str, LENGTH(blockType_str), "SUBSCRBLOK", sizeof("SUBSCRBLOK"));
+                strncpy_s(blockType_str, LENGTH(blockType_str), "COVBLOCK", sizeof("COVBLOCK"));
                 break;
             }
         #endif
@@ -269,6 +275,7 @@ static void mdlInitializeSizes(SimStruct *S)
     }
 #endif
 
+
 #if defined(MDL_INITIALIZE_CONDITIONS)
     static void mdlInitializeConditions(SimStruct *S)
     {
@@ -293,7 +300,7 @@ static void mdlInitializeSizes(SimStruct *S)
 
             atexit(datalink_cleanup);
 
-            // Chek for all BACnet devices currently availible in this network
+            // Check for all BACnet devices currently available in this Network
             Send_WhoIs(-1, -1);
         }
 
@@ -307,15 +314,29 @@ static void mdlInitializeSizes(SimStruct *S)
 
             DEBUG_MSG("  Target Device: %u", Target_Device_Instance);
             
-            ssGetIWork(S)[0] = num_Key_Map; // Make sure each ReadBlock call increases the counter
+            // Define Blocks NumKey (Identification)
+            ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP] = num_Key_Map; // Make sure each ReadBlock call increases the counter
             Key_Map[num_Key_Map++] = (READ_KEY_MAP *)calloc(1, sizeof(READ_KEY_MAP));
 
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Target_Device_Instance,
-                                                              &max_apdu,
-                                                              &Target_Address);
-
+            // Try to bind Block's TargetID
+            ssGetIWork(S)[SS_IWORK_RD_BOUND] = 
+                (uint32_t)address_bind_request(Target_Device_Instance,
+                                               &max_apdu,
+                                               &Target_Address);
             
-            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[1] > 0) ? "OK" : "FAILED");
+            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_RD_BOUND] > 0) ? "OK" : "FAILED");
+
+            // Reset individual Block read-CallCounter
+            ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;
+
+            // Init PWORK Arrays
+            mxArray *tic[1];
+
+            tic[0] = mxCreateDoubleMatrix(1,1, mxREAL);
+            
+            // Don't forget to destruct...
+            mexMakeArrayPersistent(tic[0]);
+            ssSetPWorkValue(S, SS_PWORK_RD_TIC, tic[0]);
         }
 
         /* WriteBlock */
@@ -324,12 +345,12 @@ static void mdlInitializeSizes(SimStruct *S)
             uint32_t Target_Device_Instance =
                 (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
 
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Target_Device_Instance,
+            ssGetIWork(S)[SS_IWORK_WR_BOUND] = (uint32_t)address_bind_request(Target_Device_Instance,
                                                               &max_apdu,
                                                               &Target_Address);
 
             DEBUG_MSG("[INIT] --WriteBlock--");
-            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[1] > 0) ? "OK" : "FAILED");
+            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_WR_BOUND] > 0) ? "OK" : "FAILED");
         }
 
         /* SubscribeCoV Block */
@@ -338,17 +359,18 @@ static void mdlInitializeSizes(SimStruct *S)
             uint32_t Target_Device_Instance =
                 (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
 
-            ssGetIWork(S)[0] = num_Subscriptions;
+            ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP] = num_Subscriptions;
             S_Key_Map[num_Subscriptions++] = (SUBSCRIBE_KEY_MAP *)calloc(1, sizeof(SUBSCRIBE_KEY_MAP));
 
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Target_Device_Instance,
-                                                              &max_apdu,
-                                                              &Target_Address);
+            ssGetIWork(S)[SS_IWORK_COV_BOUND] = 
+                (uint32_t)address_bind_request(Target_Device_Instance,
+                                               &max_apdu,
+                                               &Target_Address);
 
-            S_Key_Map[ssGetIWork(S)[0]]->process_ID = num_Subscriptions;
+            S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->process_ID = num_Subscriptions;
 
             DEBUG_MSG("[INIT] --SubscriptionBlock--");
-            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[1] > 0) ? "OK" : "FAILED");
+            DEBUG_MSG("[INIT] Binding... %s", (bool)ssGetIWork(S)[SS_IWORK_COV_BOUND] ? "OK" : "FAILED");
         }
 
         return;
@@ -369,13 +391,10 @@ static void mdlInitializeSizes(SimStruct *S)
 static void mdlOutputs(SimStruct *S, int_T tid)
 {
     uint16_t pdu_len = 0;
-    BACNET_ADDRESS src = {0};
+    BACNET_ADDRESS src = { 0 };
     BACNET_APPLICATION_DATA_VALUE write_data;
     BACNET_SUBSCRIBE_COV_DATA cov_data;
     InputRealPtrsType u;
-    real32_T *yr;
-    bool *yb;
-    uint32_T *yu;
 
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
@@ -386,7 +405,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             
             if (pdu_len)
             {
-                DEBUG_MSG("[ConfigBlock] Recived BACnet message (%u)", pdu_len);
+                DEBUG_MSG("[ConfigBlock] Received BACnet message (%u)", pdu_len);
                 npdu_handler(&src, &Rx_Buf[0], pdu_len);
             }
         } while (pdu_len > 0);
@@ -402,29 +421,58 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Type =            (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
 
+        // Block Information
+        mxArray *tic[1];
+        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_RD_TIC);
 
         // If unbound, bind Target_Device Address
-        if (!(bool)ssGetIWork(S)[1])
+        if (!(bool)ssGetIWork(S)[SS_IWORK_RD_BOUND])
         {
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Target_Device_Instance,
-                                                             &max_apdu,
-                                                             &Target_Address);
+            ssGetIWork(S)[SS_IWORK_RD_BOUND] = 
+                (uint32_t)address_bind_request(Target_Device_Instance,
+                                               &max_apdu,
+                                               &Target_Address);
 
             DEBUG_MSG("[READBLOCK] Address bind for device (%u)... %s",
-                      Target_Device_Instance, ((bool)ssGetIWork(S)[1]) ? "OK" : "FAIL");
+                      Target_Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_RD_BOUND]) ? "OK" : "FAIL");
         }
-        
-        // If bound, send Read_Property_Request
-        if ((bool)ssGetIWork(S)[1] && Key_Map[ssGetIWork(S)[0]]->invoke_ID == 0)
+
+        // On Timeout revode Invoke_ID
+        if (Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID != 0)
         {
-            Key_Map[ssGetIWork(S)[0]]->invoke_ID = 
+            mxArray *elapsed[1];
+            elapsed[0] = mxCreateDoubleMatrix(1,1, mxREAL);
+
+            // Get elapsed time since RP_Request
+            mexCallMATLAB(1, elapsed, 1, tic, "toc");
+            double *value = mxGetPr(elapsed[0]);
+
+            // If Invoke_ID expired and at least 3 tries revoke ID
+            if(ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] > 3 && *value >= 0.02)
+            {
+                Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID = 0;  // Revoke ID
+                ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;                    // Reset Counter
+            }
+        }
+
+        
+        // If bound and not expecting Answer on InvokeID send Read_Property_Request
+        if ((bool)ssGetIWork(S)[SS_IWORK_RD_BOUND] && Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID == 0)
+        {
+            Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID = 
                 Send_Read_Property_Request(Target_Device_Instance,
                                            Object_Type,
                                            Object_Instance,
                                            PROP_PRESENT_VALUE, BACNET_ARRAY_ALL);
 
+            // Reset CallCounter
+            ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;
+
+            // Start TimeMeasurement
+            mexCallMATLAB(1, tic, 0, NULL, "tic");
+
             DEBUG_MSG("[READBLOCK] Sent RP request (%i) (%u|%u|%u|%s)",
-                      Key_Map[ssGetIWork(S)[0]]->invoke_ID,
+                      Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID,
                       Target_Device_Instance,
                       Object_Type,
                       Object_Instance,
@@ -436,8 +484,8 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             Object_Type == OBJECT_ANALOG_OUTPUT ||
             Object_Type == OBJECT_ANALOG_VALUE)
         {
-            yr = (real32_T *)ssGetOutputPortSignal(S, 0);
-            *yr = (real32_T)Key_Map[ssGetIWork(S)[0]]->data.Real;
+            real32_T *y = (real32_T*)ssGetOutputPortSignal(S, 0);
+            *y = (real32_T)Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->data.Real;
         }
 
         /* Binary Objects */
@@ -445,27 +493,30 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                  Object_Type == OBJECT_BINARY_OUTPUT ||
                  Object_Type == OBJECT_BINARY_VALUE)
         {
-            yb = (bool *)ssGetOutputPortSignal(S, 0);
-            *yb = Key_Map[ssGetIWork(S)[0]]->data.Boolean;
+            bool *y = (bool *)ssGetOutputPortSignal(S, 0);
+            *y = Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->data.Boolean;
         }
 
         /* MultiStateValue Object */
         else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
         {
-            yu = (uint32_T *)ssGetOutputPortSignal(S, 0);
-            *yu = Key_Map[ssGetIWork(S)[0]]->data.Enumerated;
+            uint32_T *y = (uint32_T *)ssGetOutputPortSignal(S, 0);
+            *y = Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->data.Enumerated;
         }
 
         /* Other */
         else
         {
             DEBUG_MSG("[mdlOutputs_Read] Undefined ObjectType %u", Object_Type);
-            DEBUG_MSG("[mdlOutputs_Read] Reverting to Datatybe 'Real'");
+            DEBUG_MSG("[mdlOutputs_Read] Reverting to Datatype 'Real'");
 
-            yb = (real32_T *)ssGetOutputPortSignal(S, 0);
-            *yb = Key_Map[ssGetIWork(S)[0]]->data.Real;
+            real32_T *y = (real32_T *)ssGetOutputPortSignal(S, 0);
+            *y = Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->data.Real;
         }
-
+        
+        // Inkrement CallCounter with conditional reset
+        ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 
+            (ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] < 0xFFFFFFFF) ? ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] + 1 : 0;
         return;
     }
 
@@ -479,12 +530,13 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Priority = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
 
         // If unbound, bind Target_Device address
-        if (ssGetIWork(S)[1] == 0)
+        if (!(bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
         {
-            ssGetIWork(S)[1] = address_bind_request(Device_Instance, &max_apdu, &Target_Address) ? 1 : 0;
+            ssGetIWork(S)[SS_IWORK_WR_BOUND] = 
+                address_bind_request(Device_Instance, &max_apdu, &Target_Address) ? 1 : 0;
 
             DEBUG_MSG("[WRITEBLOCK] Address bind for device (%u)... %s",
-                      Device_Instance, (ssGetIWork(S)[1] == 0) ? "FAIL" : "OK");
+                      Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND]) ? "FAIL" : "OK");
         }
 
         write_data.next = NULL;
@@ -532,7 +584,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         }
 
         // If address bound, send Write_Property_Request
-        if (ssGetIWork(S)[1] == 1)
+        if ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
         {
             Send_Write_Property_Request(Device_Instance,
                                         Object_Type,
@@ -554,20 +606,21 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
 
-        if (ssGetIWork(S)[1] == 0)
+        if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
         { 
-            ssGetIWork(S)[1] = (uint32_t)address_bind_request(Device_Instance, &max_apdu, &Target_Address);
+            ssGetIWork(S)[SS_IWORK_COV_BOUND] = 
+                (uint32_t)address_bind_request(Device_Instance, &max_apdu, &Target_Address);
 
-            DEBUG_MSG("[COVBLOK] Address bind for device (%u)... %s",
-                      Device_Instance, (ssGetIWork(S)[1] != 0) ? "OK" : "FAIL");
+            DEBUG_MSG("[COVBLOCK] Address bind for device (%u)... %s",
+                      Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND]) ? "OK" : "FAIL");
         }
 
         // If address bound, send subscription request
-        if (ssGetIWork(S)[1] == 1)
+        if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
         {
             cov_data.monitoredObjectIdentifier.type = Object_Type;
             cov_data.monitoredObjectIdentifier.instance = Object_Instance;
-            cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[0]]->process_ID;
+            cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->process_ID;
             cov_data.cancellationRequest = false;
             cov_data.issueConfirmedNotifications = false;
             cov_data.lifetime = 100;
@@ -575,23 +628,22 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             uint8_t cov = Send_COV_Subscribe(Device_Instance, &cov_data);
 
             DEBUG_MSG("[SUBSCRBLOCK] Subscription on device (%u)... %s", 
-                      Device_Instance, 
-                      (cov > 0) ? "OK" : "FAIL");
+                      Device_Instance, (cov > 0) ? "OK" : "FAIL");
 
             // Mark subscription as successful
-            if(cov != 0) { ssGetIWork(S)[1] = 2; }
+            if(cov != 0) { ssGetIWork(S)[SS_IWORK_COV_BOUND] = 2; }
         }
 
         // if successfully subscribed, copy received values to output port
-        else if (ssGetIWork(S)[1] == 2)
+        else if (ssGetIWork(S)[SS_IWORK_COV_BOUND] == 2)
         {
             /* Analog Objects */
             if (Object_Type == OBJECT_ANALOG_INPUT ||
                 Object_Type == OBJECT_ANALOG_OUTPUT ||
                 Object_Type == OBJECT_ANALOG_VALUE)
             {
-                yr = (real32_T *)ssGetOutputPortSignal(S, 0);
-                *yr = (real32_T)S_Key_Map[ssGetIWork(S)[0]]->data.Real;
+                real32_T *y = (real32_T *)ssGetOutputPortSignal(S, 0);
+                *y = (real32_T)S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->data.Real;
             }
 
             /* Binary Objects */
@@ -599,25 +651,25 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                      Object_Type == OBJECT_BINARY_OUTPUT ||
                      Object_Type == OBJECT_BINARY_VALUE)
             {
-                yb = (bool *)ssGetOutputPortSignal(S, 0);
-                *yb = S_Key_Map[ssGetIWork(S)[0]]->data.Boolean;
+                bool *y = (bool *)ssGetOutputPortSignal(S, 0);
+                *y = S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->data.Boolean;
             }
 
             /* MultiStateValue Object */
             else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
             {
-                yu = (uint32_T *)ssGetOutputPortSignal(S, 0);
-                *yu = S_Key_Map[ssGetIWork(S)[0]]->data.Enumerated;
+                uint32_T *y = (uint32_T *)ssGetOutputPortSignal(S, 0);
+                *y = S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->data.Enumerated;
             }
 
             /* Other */
             else
             {
                 DEBUG_MSG("[mdlOutputs_Subscr] Undefined ObjectType %u", Object_Type);
-                DEBUG_MSG("[mdlOutputs_Subscr] Reverting to Datatybe 'Real'");
+                DEBUG_MSG("[mdlOutputs_Subscr] Reverting to Datatype 'Real'");
 
-                yu = (uint32_T*)ssGetOutputPortSignal(S, 0);
-                *yu = (uint32_T)S_Key_Map[ssGetIWork(S)[0]]->data.Real;
+                real32_T *y = (real32_T *)ssGetOutputPortSignal(S, 0);
+                *y = (real32_T)S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->data.Real;
             }
         }
     }
@@ -645,6 +697,10 @@ static void mdlTerminate(SimStruct *S)
         DEBUG_MSG("[Terminate] ReadBlock");
 
         free(Key_Map[ssGetIWork(S)[0]]);
+
+        mxArray *tic[1];
+        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_RD_TIC);
+        mxDestroyArray(tic[0]);
     }
 
     /* Write Block */

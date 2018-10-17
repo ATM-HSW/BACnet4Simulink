@@ -125,6 +125,7 @@ params = {  '-I./include',...
             './Bacnet_stack/src/wpm.c',...
             './Bacnet_stack/device-client.c'};
 
+
 if nargin < 1
     params = [{ '-O' }, params];
 else
@@ -143,6 +144,16 @@ else
         if strcmp(varargin{i}, 'optimization') || strcmp(varargin{i}, '-O')
             params = [{ '-O' }, params];
             continue;
+        end
+
+        if strcmp(varargin{i}, '-Wall') || ...
+           strcmp(varargin{i}, '-W0') || ...
+           strcmp(varargin{i}, '-W1') || ...
+           strcmp(varargin{i}, '-W2') || ...
+           strcmp(varargin{i}, '-W3') || ...
+           strcmp(varargin{i}, '-W4')
+            params = [{ '-v' }, params];
+            params = [{ ['COMPFLAGS=$COMPFLAGS ' varargin{i}] }, params];
         end
     end
 end

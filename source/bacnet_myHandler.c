@@ -80,15 +80,19 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
                     {
                     case BACNET_APPLICATION_TAG_ENUMERATED:
                         Key_Map[i]->data.Boolean = value.type.Boolean;
-                        DEBUG_MSG(  "%d", Key_Map[i]->data.Boolean);
+                        DEBUG_MSG(  "InvokeID (%u): %s", 
+                                        service_data->invoke_id,
+                                        (Key_Map[i]->data.Boolean == BINARY_ACTIVE) ? "TRUE" : "FALSE" );
                         break;
+
                     case BACNET_APPLICATION_TAG_UNSIGNED_INT:
                         Key_Map[i]->data.Enumerated = value.type.Unsigned_Int;
-                        DEBUG_MSG(  "%d", Key_Map[i]->data.Enumerated);
+                        DEBUG_MSG(  "InvokeID (%u): %u", service_data->invoke_id, Key_Map[i]->data.Enumerated);
                         break;
+
                     case BACNET_APPLICATION_TAG_REAL:
                         Key_Map[i]->data.Real = value.type.Real;
-                        DEBUG_MSG(  "%f", Key_Map[i]->data.Real);
+                        DEBUG_MSG(  "InvokeID (%u): %f", service_data->invoke_id, Key_Map[i]->data.Real);
                         break;
                     }
                 }
@@ -113,7 +117,7 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
     BACNET_PROPERTY_VALUE *pProperty_value = NULL;
     uint32_t i = 0;
 
-    DEBUG_MSG("--[uCoVnotif] handler--");
+    DEBUG_MSG("--[CoVNotif] handler--");
 
     pProperty_value = &property_value[0];
     
