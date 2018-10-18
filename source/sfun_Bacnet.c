@@ -47,7 +47,13 @@
 /*---------*/
 /* Defines */
 /*---------*/
+// Config-Block
+#define APDU_RETRYCNT 3     // Retry-Count on missing received InvokeID
+#define APDU_TOUT     200   // Timeout on missing InvokeID [ms]
 
+// Simulink
+#define MDL_INITIALIZE_CONDITIONS
+#define MDL_START
 
 /*-----------------*/
 /* Typedefinitions */
@@ -72,8 +78,6 @@ SUBSCRIBE_KEY_MAP *S_Key_Map[255];
 /*----------------------*/
 /* Simulink - sFunction */
 /*----------------------*/
-#define MDL_INITIALIZE_CONDITIONS
-#define MDL_START
 
 static void mdlInitializeSizes(SimStruct *S)
 {
@@ -97,6 +101,8 @@ static void mdlInitializeSizes(SimStruct *S)
     {
         if (!ssSetNumInputPorts(S, 0))  { return; }
         if (!ssSetNumOutputPorts(S, 0)) { return; }
+
+        ssSetNumPWork(S, SS_PWORK_CONF_CNT);
     }
 
     /* Read Block */
@@ -138,7 +144,6 @@ static void mdlInitializeSizes(SimStruct *S)
         ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
 
         ssSetNumIWork(S, SS_IWORK_RD_CNT);
-        ssSetNumPWork(S, SS_PWORK_RD_CNT);
     }
 
     /* Write Block */
@@ -292,6 +297,9 @@ static void mdlInitializeSizes(SimStruct *S)
             Init_Service_Handlers();
             bip_set_port(htons(0xBAC0));
 
+            apdu_timeout_set(APDU_TOUT);
+            apdu_retries_set(APDU_RETRYCNT);
+
             if (!datalink_init(host))
             {
                 DEBUG_MSG("[INIT] Failed to init BIP");
@@ -302,6 +310,20 @@ static void mdlInitializeSizes(SimStruct *S)
 
             // Check for all BACnet devices currently available in this Network
             Send_WhoIs(-1, -1);
+
+            //
+            // Initialize TSM Timer
+
+            // Init PWORK Array
+            mxArray *tic[1];
+            tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
+            
+            // Don't forget to destruct... (mdlTerminate)
+            mexMakeArrayPersistent(tic[0]);
+            ssSetPWorkValue(S, SS_PWORK_CONF_TIC, tic[0]);
+
+            // Initialize tic
+            mexCallMATLAB(1, tic, 0, NULL, "tic");
         }
 
         /* ReadBlock */
@@ -325,18 +347,6 @@ static void mdlInitializeSizes(SimStruct *S)
                                                &Target_Address);
             
             DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_RD_BOUND] > 0) ? "OK" : "FAILED");
-
-            // Reset individual Block read-CallCounter
-            ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;
-
-            // Init PWORK Arrays
-            mxArray *tic[1];
-
-            tic[0] = mxCreateDoubleMatrix(1,1, mxREAL);
-            
-            // Don't forget to destruct...
-            mexMakeArrayPersistent(tic[0]);
-            ssSetPWorkValue(S, SS_PWORK_RD_TIC, tic[0]);
         }
 
         /* WriteBlock */
@@ -399,7 +409,31 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
     {
-        do /* process */
+        // Block Information
+        mxArray *tic[1], *elapsed[1];
+
+        tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
+        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);          // Receive global tic pointer
+        elapsed[0] = mxCreateNumericMatrix(1,1, mxDOUBLE_CLASS, mxREAL);    // Init elapsed value
+
+        // Get elapsed time since last Configblock_call
+        mexCallMATLAB(1, elapsed, 1, tic, "toc");
+
+        double *_milliseconds = mxGetPr(elapsed[0]);
+        uint32_t milliseconds = (uint32_t)(*_milliseconds * 10000);
+        uint16_t mills = milliseconds / 10;
+
+        mxDestroyArray(elapsed[0]);
+
+        // Call tsm_timer
+        tsm_timer_milliseconds(mills);
+
+        DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", mills);
+
+        //-BACnet-Process------------------------------------------------------------
+
+        /* process */
+        do
         {
             pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, 10);
             
@@ -409,6 +443,12 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                 npdu_handler(&src, &Rx_Buf[0], pdu_len);
             }
         } while (pdu_len > 0);
+
+        //---------------------------------------------------------------------------
+
+        // Update tic
+        mexCallMATLAB(1, tic, 0, NULL, "tic");              // #TBD# tic not saved ... 
+        ssSetPWorkValue(S, SS_PWORK_CONF_TIC, tic[0]);
 
         return;
     }
@@ -421,9 +461,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Type =            (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
 
-        // Block Information
-        mxArray *tic[1];
-        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_RD_TIC);
 
         // If unbound, bind Target_Device Address
         if (!(bool)ssGetIWork(S)[SS_IWORK_RD_BOUND])
@@ -437,25 +474,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                       Target_Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_RD_BOUND]) ? "OK" : "FAIL");
         }
 
-        // On Timeout revode Invoke_ID
-        if (Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID != 0)
-        {
-            mxArray *elapsed[1];
-            elapsed[0] = mxCreateDoubleMatrix(1,1, mxREAL);
-
-            // Get elapsed time since RP_Request
-            mexCallMATLAB(1, elapsed, 1, tic, "toc");
-            double *value = mxGetPr(elapsed[0]);
-
-            // If Invoke_ID expired and at least 3 tries revoke ID
-            if(ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] > 3 && *value >= 0.02)
-            {
-                Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID = 0;  // Revoke ID
-                ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;                    // Reset Counter
-            }
-        }
-
-        
         // If bound and not expecting Answer on InvokeID send Read_Property_Request
         if ((bool)ssGetIWork(S)[SS_IWORK_RD_BOUND] && Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID == 0)
         {
@@ -468,8 +486,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             // Reset CallCounter
             ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;
 
-            // Start TimeMeasurement
-            mexCallMATLAB(1, tic, 0, NULL, "tic");
 
             DEBUG_MSG("[READBLOCK] Sent RP request (%i) (%u|%u|%u|%s)",
                       Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID,
@@ -514,9 +530,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             *y = Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->data.Real;
         }
         
-        // Inkrement CallCounter with conditional reset
-        ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 
-            (ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] < 0xFFFFFFFF) ? ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] + 1 : 0;
         return;
     }
 
@@ -546,7 +559,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         //
         // Configure WriteProperty Data & Type
-
+        
         /*  Analog Objects */
         if (Object_Type == OBJECT_ANALOG_INPUT ||
             Object_Type == OBJECT_ANALOG_OUTPUT ||
@@ -596,6 +609,25 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             DEBUG_MSG("[WRITEBLOCK] Sent WP request (%u|%u|%u|%s)",
                       Device_Instance, Object_Type,
                       Object_Instance, "PV");
+            
+            switch(write_data.tag)
+            {
+                case BACNET_APPLICATION_TAG_BOOLEAN:
+                    DEBUG_MSG("[WRITEBLOCK] Value: %s", (write_data.type.Boolean) ? "TRUE" : "FALSE");
+                    break;
+
+                case BACNET_APPLICATION_TAG_UNSIGNED_INT:
+                    DEBUG_MSG("[WRITEBLOCK] Value: %u", write_data.type.Unsigned_Int);
+                    break;
+
+                case BACNET_APPLICATION_TAG_REAL:
+                    DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data.type.Real);
+                    break;
+
+                case BACNET_APPLICATION_TAG_DOUBLE:
+                    DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data.type.Double);
+                    break;
+            }
         }
     }
 
@@ -679,9 +711,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 static void mdlTerminate(SimStruct *S)
 {
-    BACNET_APPLICATION_DATA_VALUE write_data;
-    BACNET_SUBSCRIBE_COV_DATA cov_data;
-
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
     {
@@ -689,6 +718,10 @@ static void mdlTerminate(SimStruct *S)
 
         datalink_cleanup();
         atexit(datalink_cleanup);
+
+        mxArray *tic[1];
+        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);
+        mxDestroyArray(tic[0]);
     }
 
     /* Read Block */
@@ -697,36 +730,68 @@ static void mdlTerminate(SimStruct *S)
         DEBUG_MSG("[Terminate] ReadBlock");
 
         free(Key_Map[ssGetIWork(S)[0]]);
-
-        mxArray *tic[1];
-        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_RD_TIC);
-        mxDestroyArray(tic[0]);
     }
 
     /* Write Block */
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
+        BACNET_APPLICATION_DATA_VALUE write_data;
+        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+        uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        uint32_t Write_Priority =  (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
+
         DEBUG_MSG("[Terminate] WriteBlock");
 
         write_data.next = NULL;
         write_data.context_specific = false;
 
-        write_data.tag = BACNET_APPLICATION_TAG_NULL;
-        write_data.type.Enumerated = BINARY_INACTIVE;
+        /*  Analog Objects */
+        if (Object_Type == OBJECT_ANALOG_INPUT ||
+            Object_Type == OBJECT_ANALOG_OUTPUT ||
+            Object_Type == OBJECT_ANALOG_VALUE)
+        {
+            write_data.tag = BACNET_APPLICATION_TAG_REAL;
+            write_data.type.Real = 0.0f;
+        }
 
-        Send_Write_Property_Request((uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE)),
-                                    (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE)),
-                                    (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE)),
+        /* Binary Objects */
+        else if (Object_Type == OBJECT_BINARY_INPUT ||
+                 Object_Type == OBJECT_BINARY_OUTPUT ||
+                 Object_Type == OBJECT_BINARY_VALUE)
+        {
+            write_data.tag = BACNET_APPLICATION_TAG_BOOLEAN;
+            write_data.type.Boolean = BINARY_INACTIVE;
+        }
+
+        /* MultiStateValue Object */
+        else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
+        {
+            write_data.tag = BACNET_APPLICATION_TAG_UNSIGNED_INT;
+            write_data.type.Unsigned_Int = 0;
+        }
+
+        /* Other */
+        else
+        {
+            write_data.tag = BACNET_APPLICATION_TAG_DOUBLE;
+            write_data.type.Double = 0.0;
+        }
+
+        Send_Write_Property_Request(Device_Instance,
+                                    Object_Type,
+                                    Object_Instance,
                                     PROP_PRESENT_VALUE, &write_data,
-                                    (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY)),
-                                    BACNET_ARRAY_ALL);
+                                    Write_Priority, BACNET_ARRAY_ALL);
     }
 
     /* SubscribeCoV Block */
     else
     {
-        DEBUG_MSG("[Terminate] SubscribeBlock");
+        BACNET_SUBSCRIBE_COV_DATA cov_data;
 
+        DEBUG_MSG("[Terminate] SubscribeBlock");
+        
         cov_data.monitoredObjectIdentifier.type = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         cov_data.monitoredObjectIdentifier.instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
         cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[0]]->process_ID;

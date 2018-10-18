@@ -98,9 +98,16 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
                 }
             }
 
+            // Check if TSM_State_Machine freed InvokeID of ACK'd message
+            if(!tsm_invoke_id_free(Key_Map[i]->invoke_ID))
+            {
+                // Forcefully free InvokeID
+                tsm_free_invoke_id(Key_Map[i]->invoke_ID);
+            }
+
             // Free InvokeID and reset corresponding KeyMap
-            tsm_invoke_id_free(Key_Map[i]->invoke_ID);
             Key_Map[i]->invoke_ID = 0;
+
             break;
         }
     }
@@ -164,6 +171,12 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
 
 void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src, uint8_t invoke_id)
 {
-    tsm_invoke_id_free(invoke_id);
+    // Check if TSM_State_Machine freed InvokeID of ACK'd message
+    if(!tsm_invoke_id_free(invoke_id))
+    {
+        // Forcefully free InvokeID
+        tsm_free_invoke_id(invoke_id);
+    }
+
     return;
 }
