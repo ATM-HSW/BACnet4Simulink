@@ -20,7 +20,8 @@
 			"bip.h": "c",
 			"bvlc.h": "c",
 			"matrix.h": "c",
-			"xtr1common": "c"
+			"xtr1common": "c",
+			"mex.h": "c"
 		},
 		"matlab.matlabpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\matlab.exe",
 		"matlab.mlintpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\win64\\mlint.exe",

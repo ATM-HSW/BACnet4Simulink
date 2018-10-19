@@ -6,7 +6,7 @@
 /*----------*/
 // MATLAB / Simulink
 #include "simstruc.h"
-#include "matrix.h"
+#include "mex.h"
 
 // System
 #include <stddef.h>
@@ -49,11 +49,12 @@
 /*---------*/
 // Config-Block
 #define APDU_RETRYCNT 3     // Retry-Count on missing received InvokeID
-#define APDU_TOUT     200   // Timeout on missing InvokeID [ms]
+#define APDU_TOUT     500   // Timeout on missing InvokeID [ms]
 
 // Simulink
 #define MDL_INITIALIZE_CONDITIONS
 #define MDL_START
+#define MDL_UPDATE
 
 /*-----------------*/
 /* Typedefinitions */
@@ -63,7 +64,6 @@
 /*------------------*/
 /* Global Variables */
 /*------------------*/
-/* the invoke id is needed to filter incoming messages */
 static BACNET_ADDRESS Target_Address;
 static uint8_t Rx_Buf[MAX_MPDU] = { 0 };
 static uint32_t max_apdu = 0;
@@ -73,6 +73,8 @@ READ_KEY_MAP *Key_Map[255];
 
 uint32_t num_Subscriptions = 0;
 SUBSCRIBE_KEY_MAP *S_Key_Map[255];
+
+uint64_T _tic = 0;
 
 
 /*----------------------*/
@@ -101,8 +103,6 @@ static void mdlInitializeSizes(SimStruct *S)
     {
         if (!ssSetNumInputPorts(S, 0))  { return; }
         if (!ssSetNumOutputPorts(S, 0)) { return; }
-
-        ssSetNumPWork(S, SS_PWORK_CONF_CNT);
     }
 
     /* Read Block */
@@ -314,16 +314,17 @@ static void mdlInitializeSizes(SimStruct *S)
             //
             // Initialize TSM Timer
 
-            // Init PWORK Array
+            // Init _tic
             mxArray *tic[1];
             tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
             
-            // Don't forget to destruct... (mdlTerminate)
-            mexMakeArrayPersistent(tic[0]);
-            ssSetPWorkValue(S, SS_PWORK_CONF_TIC, tic[0]);
-
-            // Initialize tic
             mexCallMATLAB(1, tic, 0, NULL, "tic");
+            
+            uint64_T *data = (uint64_T*) mxGetData(tic[0]);
+            memcpy(_tic, &data, sizeof(_tic));
+
+
+            mxDestroyArray(tic[0]);
         }
 
         /* ReadBlock */
@@ -398,41 +399,67 @@ static void mdlInitializeSizes(SimStruct *S)
 #endif
 
 
+#if defined(MDL_UPDATE) && defined(MATLAB_MEX_FILE)
+    static void mdlUpdate(SimStruct *S, int_T tid) 
+    { 
+        /* ConfigBlock */
+        if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
+        {
+            // Block Information
+            mxArray *tic[1], *elapsed[1];
+
+            tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
+
+            if(_tic == 0)
+            {
+                // Init _tic
+                mexCallMATLAB(1, tic, 0, NULL, "tic");
+                mxSetData(tic[0], (uint64_T*) _tic);
+                
+                uint64_T *data = (uint64_T*) mxGetData(tic[0]);
+                memcpy(_tic, &data, sizeof(_tic));
+            }
+            else
+            {
+                // Calculate elapsed time
+                elapsed[0] = mxCreateDoubleMatrix(1,1, mxREAL);
+                mxSetData(tic[0], (uint64_T*) _tic);
+                mexCallMATLAB(1, elapsed, 1, tic, "toc");
+
+                double *_milliseconds = mxGetPr(elapsed[0]);
+                uint32_t milliseconds = (uint32_t)(*_milliseconds * 10000);
+                milliseconds /= 10;
+
+                DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", milliseconds);
+
+                // Call tsm_timer
+                tsm_timer_milliseconds(milliseconds);
+
+                // Update _tic
+                mexCallMATLAB(1, tic, 0, NULL, "tic");
+                
+                uint64_T *data = (uint64_T*) mxGetData(tic[0]);
+                memcpy(_tic, &data, sizeof(_tic));
+            }
+
+            mxDestroyArray(tic[0]);
+            mxDestroyArray(elapsed[0]);
+        }
+
+        return;
+    } 
+#endif
+
+
 static void mdlOutputs(SimStruct *S, int_T tid)
 {
-    uint16_t pdu_len = 0;
-    BACNET_ADDRESS src = { 0 };
-    BACNET_APPLICATION_DATA_VALUE write_data;
-    BACNET_SUBSCRIBE_COV_DATA cov_data;
-    InputRealPtrsType u;
-
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
     {
-        // Block Information
-        mxArray *tic[1], *elapsed[1];
-
-        tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
-        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);          // Receive global tic pointer
-        elapsed[0] = mxCreateNumericMatrix(1,1, mxDOUBLE_CLASS, mxREAL);    // Init elapsed value
-
-        // Get elapsed time since last Configblock_call
-        mexCallMATLAB(1, elapsed, 1, tic, "toc");
-
-        double *_milliseconds = mxGetPr(elapsed[0]);
-        uint32_t milliseconds = (uint32_t)(*_milliseconds * 10000);
-        uint16_t mills = milliseconds / 10;
-
-        mxDestroyArray(elapsed[0]);
-
-        // Call tsm_timer
-        tsm_timer_milliseconds(mills);
-
-        DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", mills);
-
         //-BACnet-Process------------------------------------------------------------
+        uint16_t pdu_len = 0;
+        BACNET_ADDRESS src = { 0 };
 
-        /* process */
         do
         {
             pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, 10);
@@ -443,12 +470,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                 npdu_handler(&src, &Rx_Buf[0], pdu_len);
             }
         } while (pdu_len > 0);
-
-        //---------------------------------------------------------------------------
-
-        // Update tic
-        mexCallMATLAB(1, tic, 0, NULL, "tic");              // #TBD# tic not saved ... 
-        ssSetPWorkValue(S, SS_PWORK_CONF_TIC, tic[0]);
 
         return;
     }
@@ -541,6 +562,9 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
         uint32_t Object_Priority = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
+        
+        BACNET_APPLICATION_DATA_VALUE write_data;
+        InputRealPtrsType u;
 
         // If unbound, bind Target_Device address
         if (!(bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
@@ -634,9 +658,11 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     /* SubscribeCoV Block */
     else
     {
+        // Block Information
         uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
         uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        BACNET_SUBSCRIBE_COV_DATA cov_data;
 
         if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
         { 
@@ -719,9 +745,7 @@ static void mdlTerminate(SimStruct *S)
         datalink_cleanup();
         atexit(datalink_cleanup);
 
-        mxArray *tic[1];
-        tic[0] = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);
-        mxDestroyArray(tic[0]);
+        mxFree(_tic);
     }
 
     /* Read Block */
