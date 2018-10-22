@@ -6,7 +6,7 @@
 /*----------*/
 // MATLAB / Simulink
 #include "simstruc.h"
-#include "mex.h"
+#include "matrix.h"
 
 // System
 #include <stddef.h>
@@ -53,6 +53,7 @@
 
 // Simulink
 #define MDL_INITIALIZE_CONDITIONS
+#define MDL_SET_WORK_WIDTHS
 #define MDL_START
 #define MDL_UPDATE
 
@@ -74,8 +75,6 @@ READ_KEY_MAP *Key_Map[255];
 uint32_t num_Subscriptions = 0;
 SUBSCRIBE_KEY_MAP *S_Key_Map[255];
 
-uint64_T _tic = 0;
-
 
 /*----------------------*/
 /* Simulink - sFunction */
@@ -91,12 +90,12 @@ static void mdlInitializeSizes(SimStruct *S)
         return;
     }
 
-    ssSetSFcnParamTunable(S, SS_PARAMETER_BLOCK_TYPE, 0);             //BlockType
-    ssSetSFcnParamTunable(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE, 0); //Target Device Instance
-    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_TYPE, 0);            //Object Type
-    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_INSTANCE, 0);        //Object Instance
-    ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);              //Interface
-    ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);         //Write Priority
+    ssSetSFcnParamTunable(S, SS_PARAMETER_BLOCK_TYPE, 0);             // BlockType
+    ssSetSFcnParamTunable(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE, 0); // Target Device Instance
+    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_TYPE, 0);            // Object Type
+    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_INSTANCE, 0);        // Object Instance
+    ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);              // Interface
+    ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);         // Write Priority
 
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
@@ -142,8 +141,6 @@ static void mdlInitializeSizes(SimStruct *S)
 
         ssSetOutputPortWidth(S, 0, 1);
         ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
-
-        ssSetNumIWork(S, SS_IWORK_RD_CNT);
     }
 
     /* Write Block */
@@ -179,8 +176,6 @@ static void mdlInitializeSizes(SimStruct *S)
         ssSetInputPortComplexSignal(S, 0, COMPLEX_NO);
 
         if (!ssSetNumOutputPorts(S, 0)) { return; }
-
-        ssSetNumIWork(S, SS_IWORK_WR_CNT);
     }
 
     /* Subscribe Read */
@@ -213,8 +208,6 @@ static void mdlInitializeSizes(SimStruct *S)
 
         ssSetOutputPortWidth(S, 0, 1);
         ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
-
-        ssSetNumIWork(S, SS_IWORK_COV_CNT);
     }
 
     /* One SampleTime for each Block at whole */
@@ -236,24 +229,27 @@ static void mdlInitializeSizes(SimStruct *S)
             switch ((uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)))
             {
                 case SS_BLOCKTYPE_CONFIG:
-                strncpy_s(blockType_str, LENGTH(blockType_str), "CONFIGBLOCK", sizeof("CONFIGBLOCK"));
-                break;
+                    strncpy_s(blockType_str, LENGTH(blockType_str), "CONFIGBLOCK", sizeof("CONFIGBLOCK"));
+                    break;
 
                 case SS_BLOCKTYPE_READBLOCK:
-                strncpy_s(blockType_str, LENGTH(blockType_str), "READBLOCK", sizeof("READBLOCK"));
-                break;
+                    strncpy_s(blockType_str, LENGTH(blockType_str), "READBLOCK", sizeof("READBLOCK"));
+                    break;
 
                 case SS_BLOCKTYPE_WRITEBLOCK:
-                strncpy_s(blockType_str, LENGTH(blockType_str), "WRITEBLOCK", sizeof("WRITEBLOCK"));
-                break;
+                    strncpy_s(blockType_str, LENGTH(blockType_str), "WRITEBLOCK", sizeof("WRITEBLOCK"));
+                    break;
 
                 case SS_BLOCKTYPE_SUBSCRBLOCK:
-                strncpy_s(blockType_str, LENGTH(blockType_str), "COVBLOCK", sizeof("COVBLOCK"));
-                break;
+                    strncpy_s(blockType_str, LENGTH(blockType_str), "COVBLOCK", sizeof("COVBLOCK"));
+                    break;
             }
-        #endif
+        #endif /* DEBUG */
 
+
+        //
         // In accordance to BlockMask define SampleTime
+
         // INHERITED_SAMPLE_TIME
         if(sampleTime == -1)
         {
@@ -278,7 +274,55 @@ static void mdlInitializeSizes(SimStruct *S)
         // Define OffsetTime
         ssSetOffsetTime(S, 0, 0.0);
     }
-#endif
+
+
+    static void mdlSetWorkWidths(SimStruct *S)
+    {
+        int num_of_work_vec_elems = 0;
+
+        /* Config Block */
+        if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
+        {
+            num_of_work_vec_elems = ssSetNumPWork(S, SS_PWORK_CONF_CNT);
+            if (num_of_work_vec_elems != SS_PWORK_CONF_CNT)
+            {
+                ssSetErrorStatus(S, "[CONFBLOK] Error in creating PWork vector.\n");
+            }
+        }
+
+        /* Read Block */
+        else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_READBLOCK)
+        {
+            num_of_work_vec_elems = ssSetNumIWork(S, SS_IWORK_RD_CNT);
+            if (num_of_work_vec_elems != SS_IWORK_RD_CNT)
+            {
+                ssSetErrorStatus(S, "[READBLOCK] Error in creating IWork vector.\n");
+            }
+        }
+
+        /* Write Block */
+        else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
+        {
+            num_of_work_vec_elems = ssSetNumIWork(S, SS_IWORK_WR_CNT);
+            if (num_of_work_vec_elems != SS_IWORK_WR_CNT)
+            {
+                ssSetErrorStatus(S, "[WRITEBLOCK] Error in creating IWork vector.\n");
+            }
+        }
+
+        /* Subscribe Read */
+        else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
+        {
+            num_of_work_vec_elems = ssSetNumIWork(S, SS_IWORK_COV_CNT);
+            if (num_of_work_vec_elems != SS_IWORK_COV_CNT)
+            {
+                ssSetErrorStatus(S, "[COVBLOCK] Error in creating IWork vector.\n");
+            }
+        }
+
+        return;
+    }
+#endif /* MATLAB_MEX_FILE */
 
 
 #if defined(MDL_INITIALIZE_CONDITIONS)
@@ -310,21 +354,6 @@ static void mdlInitializeSizes(SimStruct *S)
 
             // Check for all BACnet devices currently available in this Network
             Send_WhoIs(-1, -1);
-
-            //
-            // Initialize TSM Timer
-
-            // Init _tic
-            mxArray *tic[1];
-            tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
-            
-            mexCallMATLAB(1, tic, 0, NULL, "tic");
-            
-            uint64_T *data = (uint64_T*) mxGetData(tic[0]);
-            memcpy(_tic, &data, sizeof(_tic));
-
-
-            mxDestroyArray(tic[0]);
         }
 
         /* ReadBlock */
@@ -395,8 +424,29 @@ static void mdlInitializeSizes(SimStruct *S)
         num_Key_Map = 0;
         num_Subscriptions = 0;
         address_init();
+
+        /* Config Block */
+        if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
+        {
+            mxArray *work_vector =  mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
+            mexMakeArrayPersistent(work_vector);
+
+            if(work_vector == NULL)
+            { ssSetErrorStatus(S, "Faild to alloc memory for pWork Vector.\n"); }
+            
+            else
+            {
+                ssSetPWorkValue(S, SS_PWORK_CONF_TIC, work_vector);
+
+                if(S->work.pWork[0] != work_vector)
+                { ssSetErrorStatus(S, "[CONFBLOCK] Failed to assign PWork vector.\n"); }
+
+                // Init 'tic' value
+                mexCallMATLAB(1, &work_vector, 0, NULL, "tic");
+            }
+        }
     }
-#endif
+#endif /* MDL_START */
 
 
 #if defined(MDL_UPDATE) && defined(MATLAB_MEX_FILE)
@@ -406,47 +456,25 @@ static void mdlInitializeSizes(SimStruct *S)
         if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
         {
             // Block Information
-            mxArray *tic[1], *elapsed[1];
+            mxArray *tic, *elapsed;
 
-            tic[0] = mxCreateNumericMatrix(1,1, mxUINT64_CLASS, mxREAL);
+            tic = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);
+            elapsed = mxCreateDoubleMatrix(1,1, mxREAL);
 
-            if(_tic == 0)
-            {
-                // Init _tic
-                mexCallMATLAB(1, tic, 0, NULL, "tic");
-                mxSetData(tic[0], (uint64_T*) _tic);
-                
-                uint64_T *data = (uint64_T*) mxGetData(tic[0]);
-                memcpy(_tic, &data, sizeof(_tic));
-            }
-            else
-            {
-                // Calculate elapsed time
-                elapsed[0] = mxCreateDoubleMatrix(1,1, mxREAL);
-                mxSetData(tic[0], (uint64_T*) _tic);
-                mexCallMATLAB(1, elapsed, 1, tic, "toc");
+            mexCallMATLAB(1, &elapsed, 1, &tic, "toc");
+            
+            // Evaluate 'toc' result
+            double *secs = mxGetDoubles(elapsed);
+            uint32_t msecs = (uint32_t)(*secs * 1000);
 
-                double *_milliseconds = mxGetPr(elapsed[0]);
-                uint32_t milliseconds = (uint32_t)(*_milliseconds * 10000);
-                milliseconds /= 10;
+            DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", msecs);
 
-                DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", milliseconds);
+            // Call tsm_timer
+            tsm_timer_milliseconds(msecs);
 
-                // Call tsm_timer
-                tsm_timer_milliseconds(milliseconds);
-
-                // Update _tic
-                mexCallMATLAB(1, tic, 0, NULL, "tic");
-                
-                uint64_T *data = (uint64_T*) mxGetData(tic[0]);
-                memcpy(_tic, &data, sizeof(_tic));
-            }
-
-            mxDestroyArray(tic[0]);
-            mxDestroyArray(elapsed[0]);
+            // Update _tic
+            mexCallMATLAB(1, &tic, 0, NULL, "tic");
         }
-
-        return;
     } 
 #endif
 
@@ -745,7 +773,28 @@ static void mdlTerminate(SimStruct *S)
         datalink_cleanup();
         atexit(datalink_cleanup);
 
-        mxFree(_tic);
+        //
+        // Free memory alloated for PWork-Vector
+        mxArray *work_vector = NULL;
+        work_vector = (mxArray*) ssGetPWork(S);
+
+        if(work_vector != NULL)
+        {
+            int work_vector_len = 0;
+            work_vector_len = ssGetNumPWork(S);
+
+            if(work_vector_len < 0)
+            {
+                for(uint8_t i=0; i < SS_PWORK_CONF_CNT; i++)
+                {
+                    void *work_vector_elem = NULL;
+                    work_vector_elem = ssGetPWorkValue(S, i);
+
+                    if(work_vector_elem != NULL)
+                    { free(work_vector_elem); }
+                }
+            }
+        }
     }
 
     /* Read Block */
@@ -824,8 +873,6 @@ static void mdlTerminate(SimStruct *S)
         cov_data.lifetime = 100;
 
         Send_COV_Subscribe((uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE)), &cov_data);
-
-        free(S_Key_Map[ssGetIWork(S)[0]]);
     }
 
     return;

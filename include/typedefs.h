@@ -66,6 +66,15 @@ typedef enum SS_IWORK_COV
 } SS_IWORK_COV_t;
 
 //
+// S.PWork Definitions
+typedef enum SS_PWORK_CONF
+{
+    SS_PWORK_CONF_TIC = 0,
+
+    SS_PWORK_CONF_CNT,
+} SS_PWORK_CONF_t;
+
+//
 // KeyMap Definitions
 typedef struct Read_Key_Map
 {
