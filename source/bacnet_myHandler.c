@@ -36,11 +36,11 @@
 /*--------------------*/
 /* External Variables */
 /*--------------------*/
-extern uint32_t num_Key_Map;
-extern READ_KEY_MAP *Key_Map[255];
+uint32_t num_Key_Map = 0;
+READ_KEY_MAP *Key_Map[KEYMAP_CNT];
 
-extern uint32_t num_Subscriptions;
-extern SUBSCRIBE_KEY_MAP *S_Key_Map[255];
+uint32_t num_Subscriptions = 0;
+SUBSCRIBE_KEY_MAP *S_Key_Map[S_KEYMAP_CNT];
 
 
 /*------------------*/
@@ -80,32 +80,26 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
                     {
                     case BACNET_APPLICATION_TAG_ENUMERATED:
                         Key_Map[i]->data.Boolean = value.type.Boolean;
-                        DEBUG_MSG(  "InvokeID (%u): %s", 
-                                        service_data->invoke_id,
-                                        (Key_Map[i]->data.Boolean == BINARY_ACTIVE) ? "TRUE" : "FALSE" );
+                        DEBUG_MSG("InvokeID (%u): %s", 
+                                  service_data->invoke_id,
+                                  (Key_Map[i]->data.Boolean == BINARY_ACTIVE) ? "TRUE" : "FALSE" );
                         break;
 
                     case BACNET_APPLICATION_TAG_UNSIGNED_INT:
                         Key_Map[i]->data.Enumerated = value.type.Unsigned_Int;
-                        DEBUG_MSG(  "InvokeID (%u): %u", service_data->invoke_id, Key_Map[i]->data.Enumerated);
+                        DEBUG_MSG("InvokeID (%u): %u", service_data->invoke_id, Key_Map[i]->data.Enumerated);
                         break;
 
                     case BACNET_APPLICATION_TAG_REAL:
                         Key_Map[i]->data.Real = value.type.Real;
-                        DEBUG_MSG(  "InvokeID (%u): %f", service_data->invoke_id, Key_Map[i]->data.Real);
+                        DEBUG_MSG("InvokeID (%u): %f", service_data->invoke_id, Key_Map[i]->data.Real);
                         break;
                     }
                 }
             }
 
-            // Check if TSM_State_Machine freed InvokeID of ACK'd message
-            if(!tsm_invoke_id_free(Key_Map[i]->invoke_ID))
-            {
-                // Forcefully free InvokeID
-                tsm_free_invoke_id(Key_Map[i]->invoke_ID);
-            }
-
             // Free InvokeID and reset corresponding KeyMap
+            tsm_free_invoke_id(Key_Map[i]->invoke_ID);
             Key_Map[i]->invoke_ID = 0;
 
             break;
@@ -171,12 +165,7 @@ void My_Unconfirmed_COV_Notification_Handler(uint8_t *service_request,
 
 void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src, uint8_t invoke_id)
 {
-    // Check if TSM_State_Machine freed InvokeID of ACK'd message
-    if(!tsm_invoke_id_free(invoke_id))
-    {
-        // Forcefully free InvokeID
-        tsm_free_invoke_id(invoke_id);
-    }
-
+    // free InvokeID
+    tsm_free_invoke_id(invoke_id);
     return;
 }

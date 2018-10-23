@@ -9,11 +9,7 @@
 #include "matrix.h"
 
 // System
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
+#include <chrono>
 
 // BACnet Stack
 #include "bacdef.h"
@@ -36,20 +32,15 @@
 #include "txbuf.h"
 
 // Project
-#include "bacnet_initHandler.h"
-#include "bacnet_myHandler.h"
-#include "dbg_message.h"
-#include "typedefs.h"
-
-#include "macros.h"
+#include "sfun_Bacnet.h"
 
 
 /*---------*/
 /* Defines */
 /*---------*/
 // Config-Block
-#define APDU_RETRYCNT 3     // Retry-Count on missing received InvokeID
-#define APDU_TOUT     500   // Timeout on missing InvokeID [ms]
+#define APDU_RETRYCNT 1     // Retry-Count on missing received InvokeID
+#define APDU_TOUT     1000  // Timeout on missing InvokeID [ms]
 
 // Simulink
 #define MDL_INITIALIZE_CONDITIONS
@@ -69,11 +60,8 @@ static BACNET_ADDRESS Target_Address;
 static uint8_t Rx_Buf[MAX_MPDU] = { 0 };
 static uint32_t max_apdu = 0;
 
-uint32_t num_Key_Map = 0;
-READ_KEY_MAP *Key_Map[255];
 
-uint32_t num_Subscriptions = 0;
-SUBSCRIBE_KEY_MAP *S_Key_Map[255];
+//-----------------------------------------------------------------------------
 
 
 /*----------------------*/
@@ -90,18 +78,36 @@ static void mdlInitializeSizes(SimStruct *S)
         return;
     }
 
-    ssSetSFcnParamTunable(S, SS_PARAMETER_BLOCK_TYPE, 0);             // BlockType
-    ssSetSFcnParamTunable(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE, 0); // Target Device Instance
-    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_TYPE, 0);            // Object Type
-    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_INSTANCE, 0);        // Object Instance
-    ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);              // Interface
-    ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);         // Write Priority
+    ssSetSFcnParamTunable(S, SS_PARAMETER_BLOCK_TYPE, 0);               // BlockType
+    ssSetSFcnParamTunable(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE, 0);   // Target Device Instance
+    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_TYPE, 0);              // Object Type
+    ssSetSFcnParamTunable(S, SS_PARAMETER_OBJECT_INSTANCE, 0);          // Object Instance
+    ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);                // Interface
+    ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);           // Write Priority
+    ssSetSFcnParamTunable(S, SS_PARAMETER_SAMPLE_TIME, 0);              // SampleTime
+    ssSetSFcnParamTunable(S, SS_PARAMETER_DEBUG_OUTPUTS, 0);            // optional Debug Outputs
 
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
     {
-        if (!ssSetNumInputPorts(S, 0))  { return; }
-        if (!ssSetNumOutputPorts(S, 0)) { return; }
+        int_T numOut = 0;
+
+        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
+        {
+            numOut = SS_CONF_OUTPORT_CNT;
+        }
+
+        if (!ssSetNumInputPorts(S, 0))          { return; }
+        if (!ssSetNumOutputPorts(S, numOut))    { return; }
+
+        
+        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
+        {
+            ssSetOutputPortDataType(S, SS_CONF_OUTPORT_01, SS_UINT16);
+            
+            ssSetOutputPortWidth(S, SS_CONF_OUTPORT_01, 1);
+            ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
+        }
     }
 
     /* Read Block */
@@ -288,6 +294,12 @@ static void mdlInitializeSizes(SimStruct *S)
             {
                 ssSetErrorStatus(S, "[CONFBLOK] Error in creating PWork vector.\n");
             }
+
+            num_of_work_vec_elems = ssSetNumIWork(S, SS_IWORK_CONF_CNT);
+            if (num_of_work_vec_elems != SS_IWORK_CONF_CNT)
+            {
+                ssSetErrorStatus(S, "[CONFBLOK] Error in creating IWork vector.\n");
+            }
         }
 
         /* Read Block */
@@ -421,6 +433,8 @@ static void mdlInitializeSizes(SimStruct *S)
 #if defined(MDL_START)
     static void mdlStart(SimStruct *S)
     {
+        using namespace std::chrono;
+
         num_Key_Map = 0;
         num_Subscriptions = 0;
         address_init();
@@ -428,21 +442,21 @@ static void mdlInitializeSizes(SimStruct *S)
         /* Config Block */
         if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
         {
-            mxArray *work_vector =  mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-            mexMakeArrayPersistent(work_vector);
+            high_resolution_clock::time_point *t1 = 
+                (high_resolution_clock::time_point*) calloc(1, sizeof(high_resolution_clock::time_point));
 
-            if(work_vector == NULL)
+            if(t1 == NULL)
             { ssSetErrorStatus(S, "Faild to alloc memory for pWork Vector.\n"); }
             
             else
             {
-                ssSetPWorkValue(S, SS_PWORK_CONF_TIC, work_vector);
+                ssSetPWorkValue(S, SS_PWORK_CONF_TIC, t1);
 
-                if(S->work.pWork[0] != work_vector)
+                if(S->work.pWork[0] != t1)
                 { ssSetErrorStatus(S, "[CONFBLOCK] Failed to assign PWork vector.\n"); }
 
                 // Init 'tic' value
-                mexCallMATLAB(1, &work_vector, 0, NULL, "tic");
+                *t1 = high_resolution_clock::now();
             }
         }
     }
@@ -451,29 +465,49 @@ static void mdlInitializeSizes(SimStruct *S)
 
 #if defined(MDL_UPDATE) && defined(MATLAB_MEX_FILE)
     static void mdlUpdate(SimStruct *S, int_T tid) 
-    { 
+    {
+        using namespace std::chrono;
+
         /* ConfigBlock */
         if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
         {
-            // Block Information
-            mxArray *tic, *elapsed;
-
-            tic = (mxArray*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);
-            elapsed = mxCreateDoubleMatrix(1,1, mxREAL);
-
-            mexCallMATLAB(1, &elapsed, 1, &tic, "toc");
+            uint16_t pdu_len = 0;
+            BACNET_ADDRESS src = { 0 };
             
-            // Evaluate 'toc' result
-            double *secs = mxGetDoubles(elapsed);
-            uint32_t msecs = (uint32_t)(*secs * 1000);
+            high_resolution_clock::time_point *t1;
+            high_resolution_clock::time_point  t2 = high_resolution_clock::now();
 
-            DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", msecs);
+            // Get time since last call
+            t1 = (high_resolution_clock::time_point*) ssGetPWorkValue(S, SS_PWORK_CONF_TIC);
 
-            // Call tsm_timer
-            tsm_timer_milliseconds(msecs);
+            duration<double> time_span = duration_cast<duration<double>>(t2 - *t1);
+            uint16_t msec = (uint16_t)(time_span.count() * 1000);
+            
+            DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", msec);
 
-            // Update _tic
-            mexCallMATLAB(1, &tic, 0, NULL, "tic");
+            
+            //-BACnet-Process------------------------------------------------------------
+            do
+            {
+                pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, 10);
+            
+                if (pdu_len)
+                {
+                    DEBUG_MSG("[ConfigBlock] Received BACnet message (%u)", pdu_len);
+                    npdu_handler(&src, &Rx_Buf[0], pdu_len);
+                }
+            } while (pdu_len > 0);
+            //-BACnet-Process------------------------------------------------------------
+
+
+            // Call tsm_timer()
+            tsm_timer_milliseconds(msec);
+
+            // Store updateTime
+            ssSetIWorkValue(S, SS_IWORK_CONF_UPD_TIME, msec);
+
+            // Update 'tic'
+            memcpy(t1, &t2, sizeof(high_resolution_clock::time_point));
         }
     } 
 #endif
@@ -484,20 +518,12 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     /* Config Block */
     if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
     {
-        //-BACnet-Process------------------------------------------------------------
-        uint16_t pdu_len = 0;
-        BACNET_ADDRESS src = { 0 };
-
-        do
+        // Optional: Output updateTime
+        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
         {
-            pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, 10);
-            
-            if (pdu_len)
-            {
-                DEBUG_MSG("[ConfigBlock] Received BACnet message (%u)", pdu_len);
-                npdu_handler(&src, &Rx_Buf[0], pdu_len);
-            }
-        } while (pdu_len > 0);
+            uint16_T *y = (uint16_T*)ssGetOutputPortSignal(S, SS_CONF_OUTPORT_01);
+            *y = (uint16_T)ssGetIWorkValue(S, SS_IWORK_CONF_UPD_TIME);
+        }
 
         return;
     }
@@ -507,9 +533,8 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     {
         // Target-Information
         uint32_t Target_Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        uint32_t Object_Type =            (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+        BACNET_OBJECT_TYPE Object_Type =  (BACNET_OBJECT_TYPE)(int)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
         uint32_t Object_Instance =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-
 
         // If unbound, bind Target_Device Address
         if (!(bool)ssGetIWork(S)[SS_IWORK_RD_BOUND])
@@ -530,11 +555,11 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                 Send_Read_Property_Request(Target_Device_Instance,
                                            Object_Type,
                                            Object_Instance,
-                                           PROP_PRESENT_VALUE, BACNET_ARRAY_ALL);
+                                           (BACNET_PROPERTY_ID) PROP_PRESENT_VALUE, 
+                                           BACNET_ARRAY_ALL);
 
             // Reset CallCounter
             ssGetIWork(S)[SS_IWORK_RD_READ_COUNTER] = 0;
-
 
             DEBUG_MSG("[READBLOCK] Sent RP request (%i) (%u|%u|%u|%s)",
                       Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]->invoke_ID,
@@ -586,10 +611,10 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
         //  Target-Information
-        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-        uint32_t Object_Priority = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
+        uint32_t Device_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+        BACNET_OBJECT_TYPE Object_Type = (BACNET_OBJECT_TYPE)(int)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+        uint32_t Object_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        uint32_t Object_Priority =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
         
         BACNET_APPLICATION_DATA_VALUE write_data;
         InputRealPtrsType u;
@@ -809,10 +834,10 @@ static void mdlTerminate(SimStruct *S)
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
         BACNET_APPLICATION_DATA_VALUE write_data;
-        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-        uint32_t Write_Priority =  (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
+        uint32_t Device_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+        BACNET_OBJECT_TYPE Object_Type = (BACNET_OBJECT_TYPE)(int)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+        uint32_t Object_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        uint32_t Write_Priority =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
 
         DEBUG_MSG("[Terminate] WriteBlock");
 
@@ -855,7 +880,8 @@ static void mdlTerminate(SimStruct *S)
                                     Object_Type,
                                     Object_Instance,
                                     PROP_PRESENT_VALUE, &write_data,
-                                    Write_Priority, BACNET_ARRAY_ALL);
+                                    Write_Priority, 
+                                    BACNET_ARRAY_ALL);
     }
 
     /* SubscribeCoV Block */
@@ -877,6 +903,31 @@ static void mdlTerminate(SimStruct *S)
 
     return;
 }
+
+
+#if defined(BACNET4SIMULINK)
+    /** Clears / Revokes a registered InvokeID from KeyMap and/or Subscription KeyMap.
+     * @param InvokeID ID to be revoked
+     * @return none
+     */
+    void clear_InvokeID(uint8_t InvokeID)
+    {
+        for(uint8_t i=0; i<KEYMAP_CNT; i++)
+        {
+            if(Key_Map[i]->invoke_ID == InvokeID)
+            { Key_Map[i]->invoke_ID = 0; }
+        }
+
+        for(uint8_t i=0; i<S_KEYMAP_CNT; i++)
+        {
+            if(S_Key_Map[i]->process_ID == InvokeID)
+            { S_Key_Map[i]->process_ID = 0; }
+        }
+
+        return;
+    }
+#endif
+
 
 #ifdef MATLAB_MEX_FILE /* Is this file being compiled as a MEX-file? */
     #include "simulink.c"  /* MEX-file interface mechanism */

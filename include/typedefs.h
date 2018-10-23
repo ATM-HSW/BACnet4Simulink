@@ -23,6 +23,13 @@ typedef enum SS_BLOCKTYPES
   SS_BLOCKTYPE_CNT,  
 } SS_BLOCKTYPES_t;
 
+typedef enum SS_BLOCKOUT_PORTS_CONF
+{
+    SS_CONF_OUTPORT_01 = 0,     // ConfigBlock Out_01: Debug / updateTime
+
+    SS_CONF_OUTPORT_CNT,
+} SS_BLOCKOUT_PORTS_CONF_t;
+
 //
 // Parameter Definitions
 typedef enum SS_PARAMETERS
@@ -35,11 +42,20 @@ typedef enum SS_PARAMETERS
     SS_PARAMETER_WRITE_PRIORITY,
     SS_PARAMETER_SAMPLE_TIME,
 
+    SS_PARAMETER_DEBUG_OUTPUTS,
+
     SS_PARAMETER_CNT,
 } SS_PARAMETERS_t;
 
 //
 // S.IWORK Definitions
+typedef enum SS_IWORK_CONF
+{
+    SS_IWORK_CONF_UPD_TIME = 0,
+
+    SS_IWORK_CONF_CNT,
+} SS_IWORK_CONF_t;
+
 typedef enum SS_IWORK_RD
 {
     SS_IWORK_RD_NUM_KEYMAP = 0,
@@ -78,8 +94,8 @@ typedef enum SS_PWORK_CONF
 // KeyMap Definitions
 typedef struct Read_Key_Map
 {
-    uint8_t invoke_ID;
-    uint8_t type;
+    uint8_t  invoke_ID;
+    uint8_t  type;
     union {
         bool Boolean;
         uint32_t Enumerated;
