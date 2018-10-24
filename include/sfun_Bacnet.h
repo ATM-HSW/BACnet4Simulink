@@ -36,7 +36,6 @@ extern SUBSCRIBE_KEY_MAP *S_Key_Map[S_KEYMAP_CNT];
 }
 #endif
 
-
 /*------------*/
 /* Prototypes */
 /*------------*/

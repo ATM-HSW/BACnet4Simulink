@@ -39,8 +39,8 @@
 /* Defines */
 /*---------*/
 // Config-Block
-#define APDU_RETRYCNT 1     // Retry-Count on missing received InvokeID
-#define APDU_TOUT     1000  // Timeout on missing InvokeID [ms]
+#define APDU_RETRYCNT 0     // Retry-Count on missing received InvokeID
+#define APDU_TOUT     250   // Timeout on missing InvokeID [ms]
 
 // Simulink
 #define MDL_INITIALIZE_CONDITIONS
@@ -292,13 +292,13 @@ static void mdlInitializeSizes(SimStruct *S)
             num_of_work_vec_elems = ssSetNumPWork(S, SS_PWORK_CONF_CNT);
             if (num_of_work_vec_elems != SS_PWORK_CONF_CNT)
             {
-                ssSetErrorStatus(S, "[CONFBLOK] Error in creating PWork vector.\n");
+                ssSetErrorStatus(S, "[CONFBLOCK] Error in creating PWork vector.\n");
             }
 
             num_of_work_vec_elems = ssSetNumIWork(S, SS_IWORK_CONF_CNT);
             if (num_of_work_vec_elems != SS_IWORK_CONF_CNT)
             {
-                ssSetErrorStatus(S, "[CONFBLOK] Error in creating IWork vector.\n");
+                ssSetErrorStatus(S, "[CONFBLOCK] Error in creating IWork vector.\n");
             }
         }
 
@@ -379,6 +379,8 @@ static void mdlInitializeSizes(SimStruct *S)
             DEBUG_MSG("  Target Device: %u", Target_Device_Instance);
             
             // Define Blocks NumKey (Identification)
+            if (num_Key_Map >= (KEYMAP_CNT-1)) { ssSetErrorStatus(S, "[READBLOCK] Read Block Limit reached.\n"); }
+
             ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP] = num_Key_Map; // Make sure each ReadBlock call increases the counter
             Key_Map[num_Key_Map++] = (READ_KEY_MAP *)calloc(1, sizeof(READ_KEY_MAP));
 
@@ -411,7 +413,10 @@ static void mdlInitializeSizes(SimStruct *S)
             uint32_t Target_Device_Instance =
                 (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
 
-            ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP] = num_Subscriptions;
+            // Define Blocks NumKey (Identification)
+            if (num_Subscriptions >= (S_KEYMAP_CNT-1)) { ssSetErrorStatus(S, "[COVBLOCK] CoV Block Limit reached.\n"); }
+
+            ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP] = num_Subscriptions; // Make sure each CoVBlock call increases the counter
             S_Key_Map[num_Subscriptions++] = (SUBSCRIBE_KEY_MAP *)calloc(1, sizeof(SUBSCRIBE_KEY_MAP));
 
             ssGetIWork(S)[SS_IWORK_COV_BOUND] = 
@@ -482,7 +487,8 @@ static void mdlInitializeSizes(SimStruct *S)
 
             duration<double> time_span = duration_cast<duration<double>>(t2 - *t1);
             uint16_t msec = (uint16_t)(time_span.count() * 1000);
-            
+            ssSetIWorkValue(S, SS_IWORK_CONF_UPD_TIME, msec);
+
             DEBUG_MSG("[ConfigBlock] TSM_Timer_Milliseconds (%u)", msec);
 
             
@@ -497,17 +503,52 @@ static void mdlInitializeSizes(SimStruct *S)
                     npdu_handler(&src, &Rx_Buf[0], pdu_len);
                 }
             } while (pdu_len > 0);
-            //-BACnet-Process------------------------------------------------------------
-
 
             // Call tsm_timer()
             tsm_timer_milliseconds(msec);
 
-            // Store updateTime
-            ssSetIWorkValue(S, SS_IWORK_CONF_UPD_TIME, msec);
+            //-BACnet-Process------------------------------------------------------------
+
 
             // Update 'tic'
             memcpy(t1, &t2, sizeof(high_resolution_clock::time_point));
+        }
+
+        /* CoV Subscription Block */
+        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
+        {
+            // Block Information
+            uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+            uint32_t Object_Type     = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+            uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+            BACNET_SUBSCRIBE_COV_DATA cov_data;
+
+            if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
+            {
+                ssGetIWork(S)[SS_IWORK_COV_BOUND] =
+                    (uint32_t)address_bind_request(Device_Instance, &max_apdu, &Target_Address);
+
+                DEBUG_MSG("[COVBLOCK] Address bind for device (%u)... %s",
+                          Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND]) ? "OK" : "FAIL");
+            }
+
+            // If address bound, send subscription request
+            if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
+            {
+                cov_data.monitoredObjectIdentifier.type = Object_Type;
+                cov_data.monitoredObjectIdentifier.instance = Object_Instance;
+                cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->process_ID;
+                cov_data.cancellationRequest = false;
+                cov_data.issueConfirmedNotifications = false;
+                cov_data.lifetime = 100;
+
+                uint8_t cov = Send_COV_Subscribe(Device_Instance, &cov_data);
+
+                DEBUG_MSG("[SUBSCRBLOCK] Subscription on device (%u)... %s", Device_Instance, (cov > 0) ? "OK" : "FAIL");
+
+                // Mark subscription as successful
+                if (cov != 0) { ssGetIWork(S)[SS_IWORK_COV_BOUND] = 2; }
+            }
         }
     } 
 #endif
@@ -709,44 +750,13 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     }
 
     /* SubscribeCoV Block */
-    else
+    else if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
     {
         // Block Information
-        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        uint32_t Object_Type =     (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-        BACNET_SUBSCRIBE_COV_DATA cov_data;
-
-        if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
-        { 
-            ssGetIWork(S)[SS_IWORK_COV_BOUND] = 
-                (uint32_t)address_bind_request(Device_Instance, &max_apdu, &Target_Address);
-
-            DEBUG_MSG("[COVBLOCK] Address bind for device (%u)... %s",
-                      Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND]) ? "OK" : "FAIL");
-        }
-
-        // If address bound, send subscription request
-        if ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
-        {
-            cov_data.monitoredObjectIdentifier.type = Object_Type;
-            cov_data.monitoredObjectIdentifier.instance = Object_Instance;
-            cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[SS_IWORK_COV_NUM_KEYMAP]]->process_ID;
-            cov_data.cancellationRequest = false;
-            cov_data.issueConfirmedNotifications = false;
-            cov_data.lifetime = 100;
-
-            uint8_t cov = Send_COV_Subscribe(Device_Instance, &cov_data);
-
-            DEBUG_MSG("[SUBSCRBLOCK] Subscription on device (%u)... %s", 
-                      Device_Instance, (cov > 0) ? "OK" : "FAIL");
-
-            // Mark subscription as successful
-            if(cov != 0) { ssGetIWork(S)[SS_IWORK_COV_BOUND] = 2; }
-        }
+        uint32_t Object_Type = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
 
         // if successfully subscribed, copy received values to output port
-        else if (ssGetIWork(S)[SS_IWORK_COV_BOUND] == 2)
+        if (ssGetIWork(S)[SS_IWORK_COV_BOUND] == 2)
         {
             /* Analog Objects */
             if (Object_Type == OBJECT_ANALOG_INPUT ||
@@ -785,6 +795,12 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         }
     }
 
+    /* Other */
+    else
+    {
+        ssSetErrorStatus(S, "[mdlOutputs] Unknown Block called.\n");
+    }
+
     return;
 }
 
@@ -800,8 +816,7 @@ static void mdlTerminate(SimStruct *S)
 
         //
         // Free memory alloated for PWork-Vector
-        mxArray *work_vector = NULL;
-        work_vector = (mxArray*) ssGetPWork(S);
+        void *work_vector = ssGetPWork(S);
 
         if(work_vector != NULL)
         {
@@ -887,46 +902,25 @@ static void mdlTerminate(SimStruct *S)
     /* SubscribeCoV Block */
     else
     {
+        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+        uint32_t Object_Type = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
         BACNET_SUBSCRIBE_COV_DATA cov_data;
 
         DEBUG_MSG("[Terminate] SubscribeBlock");
         
-        cov_data.monitoredObjectIdentifier.type = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        cov_data.monitoredObjectIdentifier.instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
+        cov_data.monitoredObjectIdentifier.type = Object_Type;
+        cov_data.monitoredObjectIdentifier.instance = Object_Instance;
         cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[0]]->process_ID;
         cov_data.cancellationRequest = true;
         cov_data.issueConfirmedNotifications = false;
         cov_data.lifetime = 100;
 
-        Send_COV_Subscribe((uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE)), &cov_data);
+        Send_COV_Subscribe(Device_Instance, &cov_data);
     }
 
     return;
 }
-
-
-#if defined(BACNET4SIMULINK)
-    /** Clears / Revokes a registered InvokeID from KeyMap and/or Subscription KeyMap.
-     * @param InvokeID ID to be revoked
-     * @return none
-     */
-    void clear_InvokeID(uint8_t InvokeID)
-    {
-        for(uint8_t i=0; i<KEYMAP_CNT; i++)
-        {
-            if(Key_Map[i]->invoke_ID == InvokeID)
-            { Key_Map[i]->invoke_ID = 0; }
-        }
-
-        for(uint8_t i=0; i<S_KEYMAP_CNT; i++)
-        {
-            if(S_Key_Map[i]->process_ID == InvokeID)
-            { S_Key_Map[i]->process_ID = 0; }
-        }
-
-        return;
-    }
-#endif
 
 
 #ifdef MATLAB_MEX_FILE /* Is this file being compiled as a MEX-file? */

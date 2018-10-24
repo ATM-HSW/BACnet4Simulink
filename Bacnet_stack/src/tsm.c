@@ -254,16 +254,16 @@ bool tsm_get_transaction_pdu(
 /* called once a millisecond or slower */
 void tsm_timer_milliseconds(uint16_t milliseconds)
 {
-    unsigned i = 0; /* counter */
-
-    for (i = 0; i < MAX_TSM_TRANSACTIONS; i++)
+    for (unsigned i = 0; i < MAX_TSM_TRANSACTIONS; i++)
     {
         if (TSM_List[i].state == TSM_STATE_AWAIT_CONFIRMATION)
         {
+            /* decrement timeout */
             if (TSM_List[i].RequestTimer > milliseconds)
-                TSM_List[i].RequestTimer -= milliseconds;
+            { TSM_List[i].RequestTimer -= milliseconds; }
             else
-                TSM_List[i].RequestTimer = 0;
+            { TSM_List[i].RequestTimer = 0; }
+
             /* AWAIT_CONFIRMATION */
             if (TSM_List[i].RequestTimer == 0)
             {
@@ -344,6 +344,39 @@ bool tsm_invoke_id_failed(
     return status;
 }
 
+
+#if defined(BACNET4SIMULINK)
+    /** Clears / Revokes a registered InvokeID from KeyMap and/or Subscription KeyMap.
+     * @param InvokeID ID to be revoked
+     * @return none
+     */
+    void clear_InvokeID(uint8_t InvokeID)
+    {
+        for(uint8_t i=0; i<num_Key_Map; i++)
+        {
+            if(Key_Map[i] == NULL) { break; }
+
+            if(Key_Map[i]->invoke_ID == InvokeID)
+            {
+                 Key_Map[i]->invoke_ID = 0;
+                 break;
+            }
+        }
+
+        for(uint8_t i=0; i<num_Subscriptions; i++)
+        {
+            if(S_Key_Map[i] == NULL) { break; }
+
+            if(S_Key_Map[i]->process_ID == InvokeID)
+            {
+                S_Key_Map[i]->process_ID = 0;
+                break;
+            }
+        }
+
+        return;
+    }
+#endif
 
 
 #ifdef TEST

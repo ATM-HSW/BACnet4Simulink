@@ -7,6 +7,12 @@
 #include <stdint.h>
 
 
+/*---------*/
+/* Defines */
+/*---------*/
+#define FLOATING_MEAN_LENGTH  10
+
+
 /*-----------------*/
 /* Typedefinitions */
 /*-----------------*/
