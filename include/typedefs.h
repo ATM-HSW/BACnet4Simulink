@@ -96,6 +96,13 @@ typedef enum SS_PWORK_CONF
     SS_PWORK_CONF_CNT,
 } SS_PWORK_CONF_t;
 
+typedef enum SS_PWORK_WRITE
+{
+    SS_PWORK_WRITE_WRDATA = 0,
+
+    SS_PWORK_WRITE_CNT,
+} SS_PWORK_WRITE_t;
+
 //
 // KeyMap Definitions
 typedef struct Read_Key_Map

@@ -320,6 +320,12 @@ static void mdlInitializeSizes(SimStruct *S)
             {
                 ssSetErrorStatus(S, "[WRITEBLOCK] Error in creating IWork vector.\n");
             }
+
+            num_of_work_vec_elems = ssSetNumPWork(S, SS_PWORK_WRITE_CNT);
+            if (num_of_work_vec_elems != SS_PWORK_WRITE_CNT)
+            {
+                ssSetErrorStatus(S, "[CONFBLOCK] Error in creating PWork vector.\n");
+            }
         }
 
         /* Subscribe Read */
@@ -402,9 +408,22 @@ static void mdlInitializeSizes(SimStruct *S)
             ssGetIWork(S)[SS_IWORK_WR_BOUND] = (uint32_t)address_bind_request(Target_Device_Instance,
                                                               &max_apdu,
                                                               &Target_Address);
-
             DEBUG_MSG("[INIT] --WriteBlock--");
             DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_WR_BOUND] > 0) ? "OK" : "FAILED");
+
+            BACNET_APPLICATION_DATA_VALUE *write_data = 
+                (BACNET_APPLICATION_DATA_VALUE*) calloc(1, sizeof(BACNET_APPLICATION_DATA_VALUE));
+
+            if(write_data == NULL)
+            { ssSetErrorStatus(S, "Faild to alloc memory for pWork Vector.\n"); }
+            
+            else
+            {
+                ssSetPWorkValue(S, SS_PWORK_WRITE_WRDATA, write_data);
+
+                if(S->work.pWork[0] != write_data)
+                { ssSetErrorStatus(S, "[WRITEBLOCK] Failed to assign PWork vector.\n"); }
+            }
         }
 
         /* SubscribeCoV Block */
@@ -513,9 +532,73 @@ static void mdlInitializeSizes(SimStruct *S)
             // Update 'tic'
             memcpy(t1, &t2, sizeof(high_resolution_clock::time_point));
         }
+        
+        /* Write Block */
+        else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
+        {
+            //  Target-Information
+            uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
+            BACNET_OBJECT_TYPE Object_Type = (BACNET_OBJECT_TYPE)(int)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
+            BACNET_APPLICATION_DATA_VALUE *write_data;
+            
+            InputRealPtrsType u = ssGetInputPortRealSignalPtrs(S, 0);
+            write_data = (BACNET_APPLICATION_DATA_VALUE*) ssGetPWorkValue(S, SS_PWORK_WRITE_WRDATA);
+
+            // If unbound, bind Target_Device address
+            if (!(bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
+            {
+                ssGetIWork(S)[SS_IWORK_WR_BOUND] =
+                    address_bind_request(Device_Instance, &max_apdu, &Target_Address) ? 1 : 0;
+
+                DEBUG_MSG("[WRITEBLOCK] Address bind for device (%u)... %s",
+                          Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND]) ? "FAIL" : "OK");
+            }
+
+            write_data->next = NULL;
+            write_data->context_specific = false;
+
+            //
+            // Configure WriteProperty Data & Type
+
+            /*  Analog Objects */
+            if (Object_Type == OBJECT_ANALOG_INPUT ||
+                Object_Type == OBJECT_ANALOG_OUTPUT ||
+                Object_Type == OBJECT_ANALOG_VALUE)
+            {
+                write_data->tag = BACNET_APPLICATION_TAG_REAL;
+                write_data->type.Real = (float)(*u[0]);
+            }
+
+            /* Binary Objects */
+            else if (Object_Type == OBJECT_BINARY_INPUT ||
+                     Object_Type == OBJECT_BINARY_OUTPUT ||
+                     Object_Type == OBJECT_BINARY_VALUE)
+            {
+                write_data->tag = BACNET_APPLICATION_TAG_BOOLEAN;
+                if (*u[0]) { write_data->type.Boolean = BINARY_ACTIVE;   }
+                else       { write_data->type.Boolean = BINARY_INACTIVE; }
+            }
+
+            /* MultiStateValue Object */
+            else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
+            {
+                write_data->tag = BACNET_APPLICATION_TAG_UNSIGNED_INT;
+                write_data->type.Unsigned_Int = (uint32_t)(*u[0]);
+            }
+
+            /* Other */
+            else
+            {
+                DEBUG_MSG("[mdlUpdate_Write] Undefined ObjectType %u", Object_Type);
+                DEBUG_MSG("[mdlUpdate_Write] Reverting to Simulinkdefault 'Double'");
+
+                write_data->tag = BACNET_APPLICATION_TAG_DOUBLE;
+                write_data->type.Double = (double)(*u[0]);
+            }
+        }
 
         /* CoV Subscription Block */
-        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
+        else if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
         {
             // Block Information
             uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
@@ -657,62 +740,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         uint32_t Object_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
         uint32_t Object_Priority =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
         
-        BACNET_APPLICATION_DATA_VALUE write_data;
-        InputRealPtrsType u;
-
-        // If unbound, bind Target_Device address
-        if (!(bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
-        {
-            ssGetIWork(S)[SS_IWORK_WR_BOUND] = 
-                address_bind_request(Device_Instance, &max_apdu, &Target_Address) ? 1 : 0;
-
-            DEBUG_MSG("[WRITEBLOCK] Address bind for device (%u)... %s",
-                      Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND]) ? "FAIL" : "OK");
-        }
-
-        write_data.next = NULL;
-        write_data.context_specific = false;
-
-        u = ssGetInputPortRealSignalPtrs(S, 0);
-
-        //
-        // Configure WriteProperty Data & Type
-        
-        /*  Analog Objects */
-        if (Object_Type == OBJECT_ANALOG_INPUT ||
-            Object_Type == OBJECT_ANALOG_OUTPUT ||
-            Object_Type == OBJECT_ANALOG_VALUE)
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_REAL;
-            write_data.type.Real = (float)(*u[0]);
-        }
-
-        /* Binary Objects */
-        else if (Object_Type == OBJECT_BINARY_INPUT ||
-                 Object_Type == OBJECT_BINARY_OUTPUT ||
-                 Object_Type == OBJECT_BINARY_VALUE)
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_BOOLEAN;
-            if (*u[0]) { write_data.type.Boolean = BINARY_ACTIVE;   }
-            else       { write_data.type.Boolean = BINARY_INACTIVE; }
-        }
-
-        /* MultiStateValue Object */
-        else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_UNSIGNED_INT;
-            write_data.type.Unsigned_Int = (uint32_t)(*u[0]);
-        }
-
-        /* Other */
-        else
-        {
-            DEBUG_MSG("[mdlOutputs_Write] Undefined ObjectType %u", Object_Type);
-            DEBUG_MSG("[mdlOutputs_Write] Reverting to Simulinkdefault 'Double'");
-
-            write_data.tag = BACNET_APPLICATION_TAG_DOUBLE;
-            write_data.type.Double = (double)(*u[0]);
-        }
+        BACNET_APPLICATION_DATA_VALUE *write_data = (BACNET_APPLICATION_DATA_VALUE*) ssGetPWorkValue(S, SS_PWORK_WRITE_WRDATA);
 
         // If address bound, send Write_Property_Request
         if ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
@@ -721,31 +749,33 @@ static void mdlOutputs(SimStruct *S, int_T tid)
                                         Object_Type,
                                         Object_Instance,
                                         PROP_PRESENT_VALUE,
-                                        &write_data,
+                                        write_data,
                                         Object_Priority, BACNET_ARRAY_ALL);
 
             DEBUG_MSG("[WRITEBLOCK] Sent WP request (%u|%u|%u|%s)",
                       Device_Instance, Object_Type,
                       Object_Instance, "PV");
             
-            switch(write_data.tag)
-            {
-                case BACNET_APPLICATION_TAG_BOOLEAN:
-                    DEBUG_MSG("[WRITEBLOCK] Value: %s", (write_data.type.Boolean) ? "TRUE" : "FALSE");
-                    break;
+            #if defined(DEBUG)
+                switch(write_data->tag)
+                {
+                    case BACNET_APPLICATION_TAG_BOOLEAN:
+                        DEBUG_MSG("[WRITEBLOCK] Value: %s", (write_data->type.Boolean) ? "TRUE" : "FALSE");
+                        break;
 
-                case BACNET_APPLICATION_TAG_UNSIGNED_INT:
-                    DEBUG_MSG("[WRITEBLOCK] Value: %u", write_data.type.Unsigned_Int);
-                    break;
+                    case BACNET_APPLICATION_TAG_UNSIGNED_INT:
+                        DEBUG_MSG("[WRITEBLOCK] Value: %u", write_data->type.Unsigned_Int);
+                        break;
 
-                case BACNET_APPLICATION_TAG_REAL:
-                    DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data.type.Real);
-                    break;
+                    case BACNET_APPLICATION_TAG_REAL:
+                        DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data->type.Real);
+                        break;
 
-                case BACNET_APPLICATION_TAG_DOUBLE:
-                    DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data.type.Double);
-                    break;
-            }
+                    case BACNET_APPLICATION_TAG_DOUBLE:
+                        DEBUG_MSG("[WRITEBLOCK] Value: %d", write_data->type.Double);
+                        break;
+                }
+            #endif
         }
     }
 
@@ -797,9 +827,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
     /* Other */
     else
-    {
-        ssSetErrorStatus(S, "[mdlOutputs] Unknown Block called.\n");
-    }
+    { ssSetErrorStatus(S, "[mdlOutputs] Unknown Block called.\n"); }
 
     return;
 }
@@ -823,7 +851,7 @@ static void mdlTerminate(SimStruct *S)
             int work_vector_len = 0;
             work_vector_len = ssGetNumPWork(S);
 
-            if(work_vector_len < 0)
+            if(work_vector_len > 0)
             {
                 for(uint8_t i=0; i < SS_PWORK_CONF_CNT; i++)
                 {
@@ -841,82 +869,39 @@ static void mdlTerminate(SimStruct *S)
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_READBLOCK)
     {
         DEBUG_MSG("[Terminate] ReadBlock");
-
-        free(Key_Map[ssGetIWork(S)[0]]);
+        free(Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]);
     }
 
     /* Write Block */
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
-        BACNET_APPLICATION_DATA_VALUE write_data;
-        uint32_t Device_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        BACNET_OBJECT_TYPE Object_Type = (BACNET_OBJECT_TYPE)(int)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        uint32_t Object_Instance =       (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-        uint32_t Write_Priority =        (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_WRITE_PRIORITY));
+        // Free pWork Vector
+        void *work_vector = ssGetPWork(S);
 
-        DEBUG_MSG("[Terminate] WriteBlock");
-
-        write_data.next = NULL;
-        write_data.context_specific = false;
-
-        /*  Analog Objects */
-        if (Object_Type == OBJECT_ANALOG_INPUT ||
-            Object_Type == OBJECT_ANALOG_OUTPUT ||
-            Object_Type == OBJECT_ANALOG_VALUE)
+        if(work_vector != NULL)
         {
-            write_data.tag = BACNET_APPLICATION_TAG_REAL;
-            write_data.type.Real = 0.0f;
-        }
+            int work_vector_len = 0;
+            work_vector_len = ssGetNumPWork(S);
 
-        /* Binary Objects */
-        else if (Object_Type == OBJECT_BINARY_INPUT ||
-                 Object_Type == OBJECT_BINARY_OUTPUT ||
-                 Object_Type == OBJECT_BINARY_VALUE)
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_BOOLEAN;
-            write_data.type.Boolean = BINARY_INACTIVE;
-        }
+            if(work_vector_len > 0)
+            {
+                for(uint8_t i=0; i < SS_PWORK_CONF_CNT; i++)
+                {
+                    void *work_vector_elem = NULL;
+                    work_vector_elem = ssGetPWorkValue(S, i);
 
-        /* MultiStateValue Object */
-        else if (Object_Type == OBJECT_MULTI_STATE_VALUE)
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_UNSIGNED_INT;
-            write_data.type.Unsigned_Int = 0;
+                    if(work_vector_elem != NULL)
+                    { free(work_vector_elem); }
+                }
+            }
         }
-
-        /* Other */
-        else
-        {
-            write_data.tag = BACNET_APPLICATION_TAG_DOUBLE;
-            write_data.type.Double = 0.0;
-        }
-
-        Send_Write_Property_Request(Device_Instance,
-                                    Object_Type,
-                                    Object_Instance,
-                                    PROP_PRESENT_VALUE, &write_data,
-                                    Write_Priority, 
-                                    BACNET_ARRAY_ALL);
     }
 
     /* SubscribeCoV Block */
-    else
+    else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_SUBSCRBLOCK)
     {
-        uint32_t Device_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_TARGET_DEVICE_INSTANCE));
-        uint32_t Object_Type = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_TYPE));
-        uint32_t Object_Instance = (uint32_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_OBJECT_INSTANCE));
-        BACNET_SUBSCRIBE_COV_DATA cov_data;
-
         DEBUG_MSG("[Terminate] SubscribeBlock");
-        
-        cov_data.monitoredObjectIdentifier.type = Object_Type;
-        cov_data.monitoredObjectIdentifier.instance = Object_Instance;
-        cov_data.subscriberProcessIdentifier = S_Key_Map[ssGetIWork(S)[0]]->process_ID;
-        cov_data.cancellationRequest = true;
-        cov_data.issueConfirmedNotifications = false;
-        cov_data.lifetime = 100;
-
-        Send_COV_Subscribe(Device_Instance, &cov_data);
+        free(S_Key_Map[ssGetIWork(S)[SS_IWORK_RD_NUM_KEYMAP]]);
     }
 
     return;
