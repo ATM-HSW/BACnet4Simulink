@@ -16,9 +16,19 @@
 			"simstruc_types.h": "c",
 			"handlers.h": "c",
 			"cg_sfun.h": "c",
-			"bacenum.h": "c"
+			"bacenum.h": "c",
+			"bip.h": "c",
+			"bvlc.h": "c",
+			"matrix.h": "c",
+			"xtr1common": "c",
+			"mex.h": "c",
+			"chrono": "c",
+			"stdlib.h": "c"
 		},
 		"matlab.matlabpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\matlab.exe",
-		"matlab.mlintpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\win64\\mlint.exe"
+		"matlab.mlintpath": "D:\\Programme\\MATLAB\\R2018a\\bin\\win64\\mlint.exe",
+		"cSpell.words": [
+			"cntr"
+		]
 	}
 }

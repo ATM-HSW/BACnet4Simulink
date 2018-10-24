@@ -162,7 +162,7 @@ uint8_t tsm_next_free_invokeID(
                 /* set this id into the table */
                 index = tsm_find_first_free_index();
                 if (index != MAX_TSM_TRANSACTIONS) {
-                    TSM_List[index].InvokeID = invokeID = Current_Invoke_ID;
+                    TSM_List[index].InvokeID = (invokeID = Current_Invoke_ID);
                     TSM_List[index].state = TSM_STATE_IDLE;
                     TSM_List[index].RequestTimer = apdu_timeout();
                     /* update for the next call or check */
@@ -252,30 +252,39 @@ bool tsm_get_transaction_pdu(
 }
 
 /* called once a millisecond or slower */
-void tsm_timer_milliseconds(
-    uint16_t milliseconds)
+void tsm_timer_milliseconds(uint16_t milliseconds)
 {
-    unsigned i = 0;     /* counter */
-
-    for (i = 0; i < MAX_TSM_TRANSACTIONS; i++) {
-        if (TSM_List[i].state == TSM_STATE_AWAIT_CONFIRMATION) {
+    for (unsigned i = 0; i < MAX_TSM_TRANSACTIONS; i++)
+    {
+        if (TSM_List[i].state == TSM_STATE_AWAIT_CONFIRMATION)
+        {
+            /* decrement timeout */
             if (TSM_List[i].RequestTimer > milliseconds)
-                TSM_List[i].RequestTimer -= milliseconds;
+            { TSM_List[i].RequestTimer -= milliseconds; }
             else
-                TSM_List[i].RequestTimer = 0;
+            { TSM_List[i].RequestTimer = 0; }
+
             /* AWAIT_CONFIRMATION */
-            if (TSM_List[i].RequestTimer == 0) {
-                if (TSM_List[i].RetryCount < apdu_retries()) {
+            if (TSM_List[i].RequestTimer == 0)
+            {
+                if (TSM_List[i].RetryCount < apdu_retries())
+                {
                     TSM_List[i].RequestTimer = apdu_timeout();
                     TSM_List[i].RetryCount++;
                     datalink_send_pdu(&TSM_List[i].dest,
-                        &TSM_List[i].npdu_data, &TSM_List[i].apdu[0],
-                        TSM_List[i].apdu_len);
-                } else {
+                                      &TSM_List[i].npdu_data, &TSM_List[i].apdu[0],
+                                      TSM_List[i].apdu_len);
+                }
+                else
+                {
                     /* note: the invoke id has not been cleared yet
                        and this indicates a failed message:
                        IDLE and a valid invoke id */
                     TSM_List[i].state = TSM_STATE_IDLE;
+
+                    #if defined(BACNET4SIMULINK)
+                        clear_InvokeID(TSM_List[i].InvokeID);
+                    #endif
                 }
             }
         }
@@ -334,6 +343,40 @@ bool tsm_invoke_id_failed(
 
     return status;
 }
+
+
+#if defined(BACNET4SIMULINK)
+    /** Clears / Revokes a registered InvokeID from KeyMap and/or Subscription KeyMap.
+     * @param InvokeID ID to be revoked
+     * @return none
+     */
+    void clear_InvokeID(uint8_t InvokeID)
+    {
+        for(uint8_t i=0; i<num_Key_Map; i++)
+        {
+            if(Key_Map[i] == NULL) { break; }
+
+            if(Key_Map[i]->invoke_ID == InvokeID)
+            {
+                 Key_Map[i]->invoke_ID = 0;
+                 break;
+            }
+        }
+
+        for(uint8_t i=0; i<num_Subscriptions; i++)
+        {
+            if(S_Key_Map[i] == NULL) { break; }
+
+            if(S_Key_Map[i]->process_ID == InvokeID)
+            {
+                S_Key_Map[i]->process_ID = 0;
+                break;
+            }
+        }
+
+        return;
+    }
+#endif
 
 
 #ifdef TEST

@@ -10,8 +10,15 @@
 /* Prototypes */
 /*------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // BACnet Handler
 void Init_Service_Handlers(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

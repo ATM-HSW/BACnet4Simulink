@@ -12,6 +12,9 @@
 /* Prototypes */
 /*------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // MyHandlers
 void MyWritePropertySimpleAckHandler(BACNET_ADDRESS *src, uint8_t invoke_id);
@@ -39,5 +42,10 @@ void MyErrorHandler(BACNET_ADDRESS *src,
                            uint8_t invoke_id,
                            BACNET_ERROR_CLASS error_class,
                            BACNET_ERROR_CODE error_code);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

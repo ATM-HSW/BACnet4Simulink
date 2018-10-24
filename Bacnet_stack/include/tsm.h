@@ -30,6 +30,10 @@
 #include "bacdef.h"
 #include "npdu.h"
 
+#if defined(BACNET4SIMULINK)
+    #include "sfun_bacnet.h"
+#endif
+
 /* note: TSM functionality is optional - only needed if we are
    doing client requests */
 #if (!MAX_TSM_TRANSACTIONS)

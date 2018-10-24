@@ -373,8 +373,9 @@ bool bip_init(
         fprintf(stderr, "UDP Port: 0x%04X [%hu]\n", ntohs(bip_get_port()),
             ntohs(bip_get_port()));
     }
+    
     /* assumes that the driver has already been initialized */
-    sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    sock_fd = (int)socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);         // Bad (e.g. Win64), see: https://stackoverflow.com/a/26496808/7264460
     bip_set_socket(sock_fd);
     if (sock_fd < 0) {
         fprintf(stderr, "bip: failed to allocate a socket.\n");
