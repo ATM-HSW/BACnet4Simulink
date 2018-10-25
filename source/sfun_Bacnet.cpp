@@ -38,10 +38,6 @@
 /*---------*/
 /* Defines */
 /*---------*/
-// Config-Block
-#define APDU_RETRYCNT 0     // Retry-Count on missing received InvokeID
-#define APDU_TOUT     250   // Timeout on missing InvokeID [ms]
-
 // Simulink
 #define MDL_INITIALIZE_CONDITIONS
 #define MDL_SET_WORK_WIDTHS
@@ -351,6 +347,8 @@ static void mdlInitializeSizes(SimStruct *S)
         /* ConfigBlock */
         if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_CONFIG)
         {
+            uint16_t apdu_timeout = (uint16_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_APDU_TOUT));
+            uint8_t  apdu_retry = (uint8_t)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_APDU_RETRY));
             mxGetString(ssGetSFcnParam(S, SS_PARAMETER_INTERFACE), host, LENGTH(host));
 
             DEBUG_MSG("[INIT] --ConfigBlock--");
@@ -359,8 +357,8 @@ static void mdlInitializeSizes(SimStruct *S)
             Init_Service_Handlers();
             bip_set_port(htons(0xBAC0));
 
-            apdu_timeout_set(APDU_TOUT);
-            apdu_retries_set(APDU_RETRYCNT);
+            apdu_timeout_set(apdu_timeout);
+            apdu_retries_set(apdu_retry);
 
             if (!datalink_init(host))
             {
@@ -875,6 +873,8 @@ static void mdlTerminate(SimStruct *S)
     /* Write Block */
     else if (mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_BLOCK_TYPE)) == SS_BLOCKTYPE_WRITEBLOCK)
     {
+        DEBUG_MSG("[Terminate] WriteBlock");
+
         // Free pWork Vector
         void *work_vector = ssGetPWork(S);
 

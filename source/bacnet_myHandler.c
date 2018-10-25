@@ -55,8 +55,8 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
     BACNET_READ_PROPERTY_DATA data;
     BACNET_APPLICATION_DATA_VALUE value;
 
-    uint8_t  len = 0;
-    uint8_t  application_data_len;
+    int  len = 0;
+    int  application_data_len;
     uint8_t *application_data;
 
     DEBUG_MSG("--[ReadProp] ACK-Handler--");
@@ -73,7 +73,7 @@ void My_Read_Property_Ack_Handler(uint8_t *service_request,
                 application_data = data.application_data;
                 application_data_len = data.application_data_len;
 
-                len = bacapp_decode_application_data(application_data, application_data_len, &value);
+                len = bacapp_decode_application_data(application_data, (unsigned)application_data_len, &value);
 
                 if (len > 0)
                 {
