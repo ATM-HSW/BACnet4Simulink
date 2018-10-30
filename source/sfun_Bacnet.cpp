@@ -81,6 +81,8 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetSFcnParamTunable(S, SS_PARAMETER_INTERFACE, 0);                // Interface
     ssSetSFcnParamTunable(S, SS_PARAMETER_WRITE_PRIORITY, 0);           // Write Priority
     ssSetSFcnParamTunable(S, SS_PARAMETER_SAMPLE_TIME, 0);              // SampleTime
+    ssSetSFcnParamTunable(S, SS_PARAMETER_APDU_RETRY, 0);               // APDU Retr Count
+    ssSetSFcnParamTunable(S, SS_PARAMETER_APDU_TOUT, 0);                // APDU Timeout
     ssSetSFcnParamTunable(S, SS_PARAMETER_DEBUG_OUTPUTS, 0);            // optional Debug Outputs
 
     /* Config Block */
@@ -88,21 +90,18 @@ static void mdlInitializeSizes(SimStruct *S)
     {
         int_T numOut = 0;
 
-        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
-        {
-            numOut = SS_CONF_OUTPORT_CNT;
-        }
+        if((bool)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS))) { numOut += 1; }
 
         if (!ssSetNumInputPorts(S, 0))          { return; }
         if (!ssSetNumOutputPorts(S, numOut))    { return; }
 
         
-        if(mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
+        if((bool)mxGetScalar(ssGetSFcnParam(S, SS_PARAMETER_DEBUG_OUTPUTS)))
         {
             ssSetOutputPortDataType(S, SS_CONF_OUTPORT_01, SS_UINT16);
             
             ssSetOutputPortWidth(S, SS_CONF_OUTPORT_01, 1);
-            ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO);
+            ssSetOutputPortComplexSignal(S, SS_CONF_OUTPORT_01, COMPLEX_NO);
         }
     }
 
