@@ -7,7 +7,7 @@ function blkStruct = slblocks
 		% 'Bacnet_lib' is the name of the library
 
 		Browser.Name = 'BACnet';
-		% 'My Library' is the library name that appears 
-             % in the Library Browser
+		% 'BACnet' is the library name that appears 
+        % in the Library Browser
 
 		blkStruct.Browser = Browser; 
