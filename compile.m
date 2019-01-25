@@ -1,7 +1,8 @@
 function compile(varargin)
 
 % MATLAB Mex Parameter
-params = {  ['-R' version('-release')] };
+%params = {  ['-R' version('-release')] };
+params = { ['-R' '2018a'] };    %Default -R2017b / Max: -R2018a (2019/01)
 
 % Windows Libraries
 params = [ { '-lWS2_32',...

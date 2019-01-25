@@ -44,6 +44,9 @@
 #define MDL_START
 #define MDL_UPDATE
 
+// BACnet4imulink
+#define BACNET_PORT 0xBAC0
+
 /*-----------------*/
 /* Typedefinitions */
 /*-----------------*/
@@ -354,7 +357,7 @@ static void mdlInitializeSizes(SimStruct *S)
             DEBUG_MSG("[INIT] ConfigBlock (HOST): %s", host);
 
             Init_Service_Handlers();
-            bip_set_port(htons(0xBAC0));
+            bip_set_port(htons(BACNET_PORT));
 
             apdu_timeout_set(apdu_timeout);
             apdu_retries_set(apdu_retry);
@@ -362,6 +365,7 @@ static void mdlInitializeSizes(SimStruct *S)
             if (!datalink_init(host))
             {
                 DEBUG_MSG("[INIT] Failed to init BIP");
+                ssSetErrorStatus(S, "[INIT] Failed to init BIP\r\n\0");
                 exit(1);
             }
 
@@ -393,7 +397,10 @@ static void mdlInitializeSizes(SimStruct *S)
                                                &max_apdu,
                                                &Target_Address);
             
-            DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_RD_BOUND] > 0) ? "OK" : "FAILED");
+            DEBUG_MSG("[INIT_RD] Binding... %s", (ssGetIWork(S)[SS_IWORK_RD_BOUND] > 0) ? "OK" : "FAILED");
+            
+            if(ssGetIWork(S)[SS_IWORK_RD_BOUND] <= 0)
+            { ssSetErrorStatus(S, "[INIT] Binding... FAILED\r\n\0"); }
         }
 
         /* WriteBlock */
@@ -407,6 +414,9 @@ static void mdlInitializeSizes(SimStruct *S)
                                                               &Target_Address);
             DEBUG_MSG("[INIT] --WriteBlock--");
             DEBUG_MSG("[INIT] Binding... %s", (ssGetIWork(S)[SS_IWORK_WR_BOUND] > 0) ? "OK" : "FAILED");
+
+            if(ssGetIWork(S)[SS_IWORK_WR_BOUND] <= 0)
+            { ssSetErrorStatus(S, "[INIT_WR] Binding... FAILED\r\n\0"); }
 
             BACNET_APPLICATION_DATA_VALUE *write_data = 
                 (BACNET_APPLICATION_DATA_VALUE*) calloc(1, sizeof(BACNET_APPLICATION_DATA_VALUE));
@@ -444,6 +454,9 @@ static void mdlInitializeSizes(SimStruct *S)
 
             DEBUG_MSG("[INIT] --SubscriptionBlock--");
             DEBUG_MSG("[INIT] Binding... %s", (bool)ssGetIWork(S)[SS_IWORK_COV_BOUND] ? "OK" : "FAILED");
+
+            if(!(bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
+            { ssSetErrorStatus(S, "[INIT_CoV] Binding... FAILED\r\n\0"); }
         }
 
         return;
@@ -549,6 +562,9 @@ static void mdlInitializeSizes(SimStruct *S)
 
                 DEBUG_MSG("[WRITEBLOCK] Address bind for device (%u)... %s",
                           Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND]) ? "FAIL" : "OK");
+
+                if((bool)ssGetIWork(S)[SS_IWORK_WR_BOUND])
+                { ssSetErrorStatus(S, "[WRBLOCK] Address bind for device (%u)... FAILED\r\n\0", Device_Instance); }
             }
 
             write_data->next = NULL;
@@ -610,6 +626,9 @@ static void mdlInitializeSizes(SimStruct *S)
 
                 DEBUG_MSG("[COVBLOCK] Address bind for device (%u)... %s",
                           Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_COV_BOUND]) ? "OK" : "FAIL");
+
+                if(!(bool)ssGetIWork(S)[SS_IWORK_COV_BOUND])
+                { ssSetErrorStatus(S, "[COVBLOCK] Address bind for device (%u)... FAILED\r\n\0", Device_Instance); }
             }
 
             // If address bound, send subscription request
@@ -625,6 +644,9 @@ static void mdlInitializeSizes(SimStruct *S)
                 uint8_t cov = Send_COV_Subscribe(Device_Instance, &cov_data);
 
                 DEBUG_MSG("[SUBSCRBLOCK] Subscription on device (%u)... %s", Device_Instance, (cov > 0) ? "OK" : "FAIL");
+
+                if(cov <= 0)
+                { ssSetErrorStatus(S, "[SUBSCR] Subscription on device (%u)... FAILED\r\n\0", Device_Instance); }
 
                 // Mark subscription as successful
                 if (cov != 0) { ssGetIWork(S)[SS_IWORK_COV_BOUND] = 2; }
@@ -667,6 +689,9 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
             DEBUG_MSG("[READBLOCK] Address bind for device (%u)... %s",
                       Target_Device_Instance, ((bool)ssGetIWork(S)[SS_IWORK_RD_BOUND]) ? "OK" : "FAIL");
+
+            if(!(bool)ssGetIWork(S)[SS_IWORK_RD_BOUND])
+            { ssSetErrorStatus(S, "[WRBLOCK] Address bind for device (%u)... FAILED\r\n\0", Device_Instance); }
         }
 
         // If bound and not expecting Answer on InvokeID send Read_Property_Request
