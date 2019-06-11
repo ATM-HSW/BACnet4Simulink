@@ -379,3 +379,15 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+
+###############
+# Visual Code #
+###############
+
+*.code-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
